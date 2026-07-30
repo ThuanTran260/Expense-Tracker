@@ -1,0 +1,160 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  settings     UserSettings?
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// USER SETTINGS — lưu cấu hình vĩnh viễn trong DB
+// Tự động tạo khi user đăng ký (1-1 với User)
+// ─────────────────────────────────────────────
+model UserSettings {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  theme          Theme    @default(LIGHT)
+  currency       Currency @default(VND)
+  language       String   @default("vi")
+  alertThreshold Float    @default(0.8)  // % ngưỡng cảnh báo budget (mặc định 80%)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+// ─────────────────────────────────────────────
+// REFRESH TOKEN — lưu refresh token để hỗ trợ logout
+// ─────────────────────────────────────────────
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────
+// CATEGORY
+// userId nullable = danh mục mặc định hệ thống (pre-seeded)
+// userId có giá trị = danh mục riêng của user
+// ─────────────────────────────────────────────
+model Category {
+  id           String        @id @default(cuid())
+  userId       String?                              // null = system default
+  name         String
+  type         TransactionType
+  icon         String?
+  isDefault    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+
+  // Relations
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  // Index: query category theo user rất nhiều
+  @@index([userId])
+  @@map("categories")
+}
+
+// ─────────────────────────────────────────────
+// TRANSACTION
+// amount LUÔN DƯƠNG — phân biệt thu/chi bằng field "type"
+// ─────────────────────────────────────────────
+model Transaction {
+  id         String          @id @default(cuid())
+  userId     String
+  categoryId String
+  amount     Float                                   // Luôn > 0
+  type       TransactionType
+  note       String?
+  date       DateTime
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  // Relations
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category        @relation(fields: [categoryId], references: [id])
+
+  // Index: query transaction theo user rất nhiều + sort theo date
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, type])
+  @@map("transactions")
+}
+
+// ─────────────────────────────────────────────
+// BUDGET — điểm cộng đã được nâng lên Core Feature
+// Đặt ngân sách theo danh mục + tháng
+// ─────────────────────────────────────────────
+model Budget {
+  id           String   @id @default(cuid())
+  userId       String
+  categoryId   String
+  monthlyLimit Float                        // Hạn mức tháng (luôn > 0)
+  month        Int                          // 1-12
+  year         Int                          // 4 digits, e.g. 2024
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  // Mỗi user chỉ có 1 budget/category/tháng
+  @@unique([userId, categoryId, month, year])
+  @@index([userId])
+  @@map("budgets")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum Currency {
+  VND
+  USD
+}

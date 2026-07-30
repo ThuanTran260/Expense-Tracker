@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+dist-test/
+build/
+**/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Prisma
+**/prisma/*.db
+
+# Bỏ qua file chứa mật khẩu cá nhân
+*.txt
+password*
+.env
+.env.local
+.env.*.local
+
+# Bỏ qua thư mục thư viện & file log
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+*.log
+
+# Bỏ qua file hệ thống OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
