@@ -62,6 +62,7 @@ export default function TransactionsPage() {
     onSuccess: (res: any) => { 
       qc.invalidateQueries({ queryKey: ['transactions'] }); 
       qc.invalidateQueries({ queryKey: ['stats'] }); 
+      qc.invalidateQueries({ queryKey: ['budgets'] }); 
       setNewTxId(res.transaction?.id ?? null);
       closeModal(); 
       setTimeout(() => setNewTxId(null), 2500);
@@ -77,6 +78,7 @@ export default function TransactionsPage() {
     onSuccess: () => { 
       qc.invalidateQueries({ queryKey: ['transactions'] }); 
       qc.invalidateQueries({ queryKey: ['stats'] }); 
+      qc.invalidateQueries({ queryKey: ['budgets'] }); 
       closeModal(); 
     },
     onError: (error: any) => {
@@ -86,7 +88,11 @@ export default function TransactionsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: transactionApi.delete,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['stats'] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['transactions'] }); 
+      qc.invalidateQueries({ queryKey: ['stats'] }); 
+      qc.invalidateQueries({ queryKey: ['budgets'] }); 
+    },
   });
 
   const openCreate = () => { setSubmitError(null); setEditTx(null); reset({ type: 'EXPENSE', date: new Date().toISOString().split('T')[0] }); setShowModal(true); };
