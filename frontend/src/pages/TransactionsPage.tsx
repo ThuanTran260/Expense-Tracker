@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Edit2, Trash2, X, Download, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Search, Check, ChevronDown } from 'lucide-react';
+import { Listbox, Transition } from '@headlessui/react';
 import { transactionApi, categoryApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,7 +27,10 @@ export default function TransactionsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [editTx, setEditTx] = useState<any>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [newTxId, setNewTxId] = useState<string | null>(null);
   const [filters, setFilters] = useState({ type: '', categoryId: '', search: '', page: 1 });
   const currency = user?.settings?.currency ?? 'VND';
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -47,18 +52,36 @@ export default function TransactionsPage() {
   });
   const categories = categoriesData?.data ?? [];
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting } } =
     useForm<TxForm>({ resolver: zodResolver(txSchema), defaultValues: { type: 'EXPENSE', date: new Date().toISOString().split('T')[0] } });
+
+  const currentType = watch('type');
 
   const createMutation = useMutation({
     mutationFn: (data: TxForm) => transactionApi.create({ ...data, date: new Date(data.date).toISOString() }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['stats'] }); closeModal(); },
+    onSuccess: (res: any) => { 
+      qc.invalidateQueries({ queryKey: ['transactions'] }); 
+      qc.invalidateQueries({ queryKey: ['stats'] }); 
+      setNewTxId(res.transaction?.id ?? null);
+      closeModal(); 
+      setTimeout(() => setNewTxId(null), 2500);
+    },
+    onError: (error: any) => {
+      setSubmitError(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<TxForm> }) =>
       transactionApi.update(id, { ...data, ...(data.date && { date: new Date(data.date).toISOString() }) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['stats'] }); closeModal(); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['transactions'] }); 
+      qc.invalidateQueries({ queryKey: ['stats'] }); 
+      closeModal(); 
+    },
+    onError: (error: any) => {
+      setSubmitError(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    }
   });
 
   const deleteMutation = useMutation({
@@ -66,9 +89,10 @@ export default function TransactionsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['stats'] }); },
   });
 
-  const openCreate = () => { setEditTx(null); reset({ type: 'EXPENSE', date: new Date().toISOString().split('T')[0] }); setShowModal(true); };
+  const openCreate = () => { setSubmitError(null); setEditTx(null); reset({ type: 'EXPENSE', date: new Date().toISOString().split('T')[0] }); setShowModal(true); };
 
   const openEdit = (tx: any) => {
+    setSubmitError(null);
     setEditTx(tx);
     reset({
       amount: tx.amount, type: tx.type, categoryId: tx.categoryId,
@@ -77,7 +101,15 @@ export default function TransactionsPage() {
     setShowModal(true);
   };
 
-  const closeModal = () => { setShowModal(false); setEditTx(null); reset(); };
+  const closeModal = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowModal(false);
+      setIsClosing(false);
+      setEditTx(null);
+      reset();
+    }, 240);
+  };
 
   const onSubmit = (data: TxForm) => {
     if (editTx) updateMutation.mutate({ id: editTx.id, data });
@@ -175,7 +207,7 @@ export default function TransactionsPage() {
                 </td></tr>
               ) : (
                 transactions.map((tx: any) => (
-                  <tr key={tx.id}>
+                  <tr key={tx.id} className={tx.id === newTxId ? 'highlight-new' : ''}>
                     <td style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
                       {new Date(tx.date).toLocaleDateString('vi-VN')}
                     </td>
@@ -229,42 +261,101 @@ export default function TransactionsPage() {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="modal">
+      {showModal && createPortal(
+        <div className={`modal-overlay${isClosing ? ' closing' : ''}`} onClick={(e) => e.target === e.currentTarget && closeModal()}>
+          <div className={`modal${isClosing ? ' closing' : ''}`}>
             <div className="modal-header">
               <h2>{editTx ? 'Sửa giao dịch' : 'Thêm giao dịch mới'}</h2>
               <button className="btn btn-ghost btn-sm" onClick={closeModal}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="modal-body">
+                {submitError && (
+                  <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
+                    {submitError}
+                  </div>
+                )}
                 <div className="form-group">
                   <label className="form-label">Loại giao dịch</label>
-                  <div className="flex gap-2">
-                    {(['EXPENSE', 'INCOME'] as const).map((t) => (
-                      <button key={t} type="button"
-                        className={`btn ${t === 'EXPENSE' ? 'btn-danger' : 'btn-primary'} ${errors.type ? 'error' : ''}`}
-                        style={{ flex: 1, opacity: undefined }}
-                        onClick={() => setValue('type', t)}>
-                        {t === 'INCOME' ? '💰 Thu' : '💸 Chi'}
-                      </button>
-                    ))}
+                  <div className="type-segmented-control">
+                    <button
+                      type="button"
+                      className={`type-toggle-btn ${currentType === 'EXPENSE' ? 'active-expense' : 'btn-inactive'}`}
+                      onClick={() => setValue('type', 'EXPENSE')}
+                      id="tx-type-expense"
+                    >
+                      💸 Chi
+                    </button>
+                    <button
+                      type="button"
+                      className={`type-toggle-btn ${currentType === 'INCOME' ? 'active-income' : 'btn-inactive'}`}
+                      onClick={() => setValue('type', 'INCOME')}
+                      id="tx-type-income"
+                    >
+                      💰 Thu
+                    </button>
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Số tiền</label>
-                  <input {...register('amount', { valueAsNumber: true })} type="number" min="1"
-                    className={`form-input${errors.amount ? ' error' : ''}`} placeholder="0" id="tx-amount" />
+                  <label className="form-label">Số tiền ({currency})</label>
+                  <Controller
+                    name="amount"
+                    control={control}
+                    render={({ field: { value, onChange } }) => (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className={`form-input${errors.amount ? ' error' : ''}`}
+                        placeholder="0"
+                        id="tx-amount"
+                        value={value ? Number(value).toLocaleString('en-US') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          onChange(raw ? Number(raw) : 0);
+                        }}
+                      />
+                    )}
+                  />
                   {errors.amount && <span className="form-error">{errors.amount.message}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Danh mục</label>
-                  <select {...register('categoryId')} className={`form-input${errors.categoryId ? ' error' : ''}`} id="tx-category">
-                    <option value="">— Chọn danh mục —</option>
-                    {categories.map((c: any) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                  </select>
+                  <Controller
+                    control={control}
+                    name="categoryId"
+                    render={({ field: { value, onChange } }) => (
+                      <Listbox value={value} onChange={onChange}>
+                        <div style={{ position: 'relative' }}>
+                          <Listbox.Button className={`form-input flex justify-between items-center${errors.categoryId ? ' error' : ''}`} id="tx-category">
+                            <span style={{ color: value ? 'inherit' : 'var(--color-text-muted)' }}>
+                              {value 
+                                ? categories.find((c: any) => c.id === value)?.icon + ' ' + categories.find((c: any) => c.id === value)?.name
+                                : '— Chọn danh mục —'}
+                            </span>
+                            <ChevronDown size={16} style={{ color: 'var(--color-text-muted)' }} />
+                          </Listbox.Button>
+                          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0" enter="listbox-enter">
+                            <Listbox.Options className="listbox-options">
+                              {categories.map((c: any) => (
+                                <Listbox.Option key={c.id} value={c.id} className={({ active, selected }) => `listbox-option ${active ? 'active' : ''} ${selected ? 'selected' : ''}`}>
+                                  {({ selected }) => (
+                                    <>
+                                      <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span>{c.icon}</span> <span>{c.name}</span>
+                                      </span>
+                                      {selected && <Check size={16} />}
+                                    </>
+                                  )}
+                                </Listbox.Option>
+                              ))}
+                            </Listbox.Options>
+                          </Transition>
+                        </div>
+                      </Listbox>
+                    )}
+                  />
                   {errors.categoryId && <span className="form-error">{errors.categoryId.message}</span>}
                 </div>
 
@@ -282,12 +373,18 @@ export default function TransactionsPage() {
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={closeModal}>Hủy</button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting} id="tx-submit">
-                  {isSubmitting ? 'Đang lưu...' : editTx ? 'Cập nhật' : 'Thêm giao dịch'}
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
+                      Đang lưu...
+                    </>
+                  ) : editTx ? 'Cập nhật' : 'Thêm giao dịch'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

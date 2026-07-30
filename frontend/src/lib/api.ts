@@ -4,6 +4,7 @@ const api = axios.create({
   baseURL: '/api/v1',
   withCredentials: true, // Gửi cookies (refreshToken HttpOnly)
   headers: { 'Content-Type': 'application/json' },
+  timeout: 10000, // Timeout sau 10s
 });
 
 // ─────────────────────────────────────────────

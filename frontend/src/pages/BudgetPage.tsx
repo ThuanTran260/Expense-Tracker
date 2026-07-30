@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, X, AlertTriangle, Check, ChevronDown } from 'lucide-react';
+import { Listbox, Transition } from '@headlessui/react';
 import { budgetApi, categoryApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -23,6 +25,9 @@ export default function BudgetPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [newBudgetId, setNewBudgetId] = useState<string | null>(null);
   const currency = user?.settings?.currency ?? 'VND';
   const alertThreshold = user?.settings?.alertThreshold ?? 0.8;
   const fmt = (n: number) => formatCurrency(n, currency);
@@ -42,15 +47,32 @@ export default function BudgetPage() {
   });
   const categories = (catData?.data ?? []).filter((c: any) => c.type === 'EXPENSE');
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } =
     useForm<BudgetForm>({
       resolver: zodResolver(budgetSchema),
       defaultValues: { month: selectedMonth, year: selectedYear },
     });
 
+  const closeModal = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowModal(false);
+      setIsClosing(false);
+      reset();
+    }, 240);
+  };
+
   const createMutation = useMutation({
     mutationFn: budgetApi.create,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['budgets'] }); setShowModal(false); reset(); },
+    onSuccess: (res: any) => { 
+      qc.invalidateQueries({ queryKey: ['budgets'] }); 
+      setNewBudgetId(res.budget?.id ?? null);
+      closeModal(); 
+      setTimeout(() => setNewBudgetId(null), 2500);
+    },
+    onError: (error: any) => {
+      setSubmitError(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    }
   });
 
   const deleteMutation = useMutation({
@@ -87,7 +109,7 @@ export default function BudgetPage() {
             onChange={(e) => setSelectedYear(Number(e.target.value))} id="budget-year">
             {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)} id="add-budget-btn">
+          <button className="btn btn-primary btn-sm" onClick={() => { setSubmitError(null); setShowModal(true); }} id="add-budget-btn">
             <Plus size={16} /> Thêm ngân sách
           </button>
         </div>
@@ -113,7 +135,7 @@ export default function BudgetPage() {
             const isWarning = budget.percent >= alertThreshold * 100 && !isOver;
 
             return (
-              <div key={budget.id} className="card">
+              <div key={budget.id} className={`card ${budget.id === newBudgetId ? 'highlight-new' : ''}`}>
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -170,29 +192,79 @@ export default function BudgetPage() {
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal">
+      {showModal && createPortal(
+        <div className={`modal-overlay${isClosing ? ' closing' : ''}`} onClick={(e) => e.target === e.currentTarget && closeModal()}>
+          <div className={`modal${isClosing ? ' closing' : ''}`}>
             <div className="modal-header">
               <h2>Thêm ngân sách</h2>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}><X size={18} /></button>
+              <button className="btn btn-ghost btn-sm" onClick={closeModal}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit((data) => createMutation.mutate(data))}>
               <div className="modal-body">
+                {submitError && (
+                  <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    {submitError}
+                  </div>
+                )}
                 <div className="form-group">
                   <label className="form-label">Danh mục chi tiêu</label>
-                  <select {...register('categoryId')} className={`form-input${errors.categoryId ? ' error' : ''}`} id="budget-category">
-                    <option value="">— Chọn danh mục —</option>
-                    {categories.map((c: any) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                  </select>
+                  <Controller
+                    control={control}
+                    name="categoryId"
+                    render={({ field: { value, onChange } }) => (
+                      <Listbox value={value} onChange={onChange}>
+                        <div style={{ position: 'relative' }}>
+                          <Listbox.Button className={`form-input flex justify-between items-center${errors.categoryId ? ' error' : ''}`} id="budget-category">
+                            <span style={{ color: value ? 'inherit' : 'var(--color-text-muted)' }}>
+                              {value 
+                                ? categories.find((c: any) => c.id === value)?.icon + ' ' + categories.find((c: any) => c.id === value)?.name
+                                : '— Chọn danh mục —'}
+                            </span>
+                            <ChevronDown size={16} style={{ color: 'var(--color-text-muted)' }} />
+                          </Listbox.Button>
+                          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0" enter="listbox-enter">
+                            <Listbox.Options className="listbox-options">
+                              {categories.map((c: any) => (
+                                <Listbox.Option key={c.id} value={c.id} className={({ active, selected }) => `listbox-option ${active ? 'active' : ''} ${selected ? 'selected' : ''}`}>
+                                  {({ selected }) => (
+                                    <>
+                                      <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span>{c.icon}</span> <span>{c.name}</span>
+                                      </span>
+                                      {selected && <Check size={16} />}
+                                    </>
+                                  )}
+                                </Listbox.Option>
+                              ))}
+                            </Listbox.Options>
+                          </Transition>
+                        </div>
+                      </Listbox>
+                    )}
+                  />
                   {errors.categoryId && <span className="form-error">{errors.categoryId.message}</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Hạn mức tháng ({currency})</label>
-                  <input {...register('monthlyLimit', { valueAsNumber: true })} type="number" min="1"
-                    className={`form-input${errors.monthlyLimit ? ' error' : ''}`}
-                    placeholder="0" id="budget-limit" />
+                  <Controller
+                    name="monthlyLimit"
+                    control={control}
+                    render={({ field: { value, onChange } }) => (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className={`form-input${errors.monthlyLimit ? ' error' : ''}`}
+                        placeholder="0"
+                        id="budget-limit"
+                        value={value ? Number(value).toLocaleString('en-US') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          onChange(raw ? Number(raw) : 0);
+                        }}
+                      />
+                    )}
+                  />
                   {errors.monthlyLimit && <span className="form-error">{errors.monthlyLimit.message}</span>}
                 </div>
 
@@ -212,14 +284,20 @@ export default function BudgetPage() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Hủy</button>
+                <button type="button" className="btn btn-ghost" onClick={closeModal}>Hủy</button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting} id="budget-submit">
-                  {isSubmitting ? 'Đang lưu...' : 'Tạo ngân sách'}
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
+                      Đang lưu...
+                    </>
+                  ) : 'Tạo ngân sách'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -57,7 +57,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div>
+    <div className="dashboard-enter">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>

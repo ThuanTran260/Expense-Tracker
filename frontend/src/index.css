@@ -129,29 +129,33 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1.25rem;
+  margin: 0.2rem 0.75rem;
   color: rgba(255, 255, 255, 0.65);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
-  border-radius: 0;
-  transition: all var(--transition);
+  border-radius: var(--radius-md);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
   border: none;
   background: none;
-  width: 100%;
+  width: calc(100% - 1.5rem);
   text-align: left;
 }
 
 .nav-item:hover {
   color: white;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
 }
 
 .nav-item.active {
   color: white;
-  background: rgba(99, 102, 241, 0.5);
-  border-right: 3px solid var(--color-primary);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(139, 92, 246, 0.85));
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  font-weight: 600;
+  transform: translateX(4px);
 }
 
 .sidebar-footer {
@@ -406,23 +410,42 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: grid;
+  place-items: center;
   padding: 1rem;
-  animation: fadeIn 0.15s ease;
+  overflow-y: auto;
+  animation: backdropFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .modal {
   background: var(--color-bg-card);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
   width: 100%;
   max-width: 480px;
-  animation: slideUp 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  animation: modalPopIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: visible;
+  margin: auto;
+}
+
+.modal-overlay.closing {
+  animation: backdropFadeOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.modal.closing {
+  animation: modalPopOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
 }
 
 .modal-header {
@@ -431,6 +454,7 @@ body {
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -440,10 +464,11 @@ body {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow: visible;
 }
 
 .modal-footer {
@@ -452,11 +477,220 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────────
-   ANIMATIONS
+   SEGMENTED CONTROL (Type Selector Thu / Chi)
    ───────────────────────────────────────────── */
+.type-segmented-control {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+
+.type-toggle-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  position: relative;
+}
+
+.type-toggle-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.type-toggle-btn.btn-inactive {
+  background: transparent;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+.type-toggle-btn.btn-inactive:hover {
+  opacity: 1;
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.04);
+  transform: scale(1);
+}
+
+.type-toggle-btn.active-expense {
+  background-color: var(--color-danger);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+  transform: scale(1);
+}
+
+.type-toggle-btn.active-income {
+  background-color: var(--color-success);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transform: scale(1);
+}
+
+/* ─────────────────────────────────────────────
+   INTRO SPLASH SCREEN
+   ───────────────────────────────────────────── */
+.intro-splash-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.intro-splash-overlay.fade-out {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+
+.intro-splash-card {
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: splashPopIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.intro-logo-glow {
+  position: absolute;
+  top: -20px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.5) 0%, rgba(99, 102, 241, 0) 70%);
+  filter: blur(20px);
+  border-radius: 50%;
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+.intro-logo-container {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+}
+
+.intro-logo-icon {
+  animation: floatIcon 3s ease-in-out infinite;
+}
+
+.intro-sparkle-icon {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  color: #fbbf24;
+  animation: spin 8s linear infinite;
+}
+
+.intro-title {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.intro-title-accent {
+  background: linear-gradient(135deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.intro-subtitle {
+  margin: 0.5rem 0 1.75rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.intro-progress-track {
+  width: 160px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.intro-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #6366f1, #10b981);
+  border-radius: 999px;
+  animation: introLoading 1.4s ease-in-out forwards;
+}
+
+/* ─────────────────────────────────────────────
+   ANIMATIONS & TRANSITIONS
+   ───────────────────────────────────────────── */
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPopIn {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes backdropFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modalPopOut {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.92) translateY(12px); }
+}
+
+@keyframes splashPopIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseGlow {
+  from { transform: scale(0.9); opacity: 0.4; }
+  to { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes introLoading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -480,8 +714,32 @@ body {
   animation: spin 0.6s linear infinite;
 }
 
+/* Page entrance smooth transition */
+.page-fade-in {
+  animation: pageEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pageEntrance {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dashboard Stagger Animations */
+.dashboard-enter .stat-card {
+  animation: cardEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dashboard-enter .stat-card:nth-child(1) { animation-delay: 0.05s; }
+.dashboard-enter .stat-card:nth-child(2) { animation-delay: 0.1s; }
+.dashboard-enter .stat-card:nth-child(3) { animation-delay: 0.15s; }
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* ─────────────────────────────────────────────
-   UTILITIES
+   UTILITIES & RESPONSIVE
    ───────────────────────────────────────────── */
 .text-success { color: var(--color-success); }
 .text-danger { color: var(--color-danger); }
@@ -511,7 +769,6 @@ body {
 .font-bold { font-weight: 700; }
 .font-semibold { font-weight: 600; }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -525,9 +782,6 @@ body {
   opacity: 0.3;
 }
 
-/* ─────────────────────────────────────────────
-   RESPONSIVE
-   ───────────────────────────────────────────── */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -549,3 +803,65 @@ body {
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .grid-2 { grid-template-columns: 1fr; }
 }
+
+/* ─────────────────────────────────────────────
+   HEADLESS UI LISTBOX & HIGHLIGHTS
+   ───────────────────────────────────────────── */
+.listbox-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  width: 100%;
+  margin-top: 0.25rem;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  padding: 0.25rem;
+  outline: none;
+}
+
+.listbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.listbox-option.active {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.listbox-option.selected {
+  font-weight: 700;
+}
+
+.listbox-enter {
+  animation: dropdownSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dropdownSlide {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.highlight-new {
+  animation: highlightRow 2.5s ease-out forwards;
+}
+
+@keyframes highlightRow {
+  0% { background-color: var(--color-primary-light); }
+  100% { background-color: transparent; }
+}
+

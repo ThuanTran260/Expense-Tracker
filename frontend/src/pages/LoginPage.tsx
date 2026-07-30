@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Wallet, Loader2 } from 'lucide-react';
+import { Wallet, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const loginSchema = z.object({
@@ -15,6 +16,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } =
     useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
@@ -22,7 +24,10 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data.email, data.password);
-      navigate('/dashboard');
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 600);
     } catch (err: any) {
       const message = err.response?.data?.error?.message || 'Đăng nhập thất bại';
       setError('root', { message });
@@ -57,7 +62,18 @@ export default function LoginPage() {
         <div className="card">
           <div className="card-body">
             <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {errors.root && (
+              {isSuccess && (
+                <div style={{
+                  background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)',
+                  borderRadius: 8, padding: '0.75rem 1rem', color: 'var(--color-success)',
+                  fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  fontWeight: 600, animation: 'fadeIn 0.2s ease',
+                }}>
+                  <CheckCircle2 size={18} /> Đăng nhập thành công! Đang chuyển hướng...
+                </div>
+              )}
+
+              {errors.root && !isSuccess && (
                 <div style={{
                   background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
                   borderRadius: 8, padding: '0.75rem 1rem', color: 'var(--color-danger)',
@@ -93,12 +109,21 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="btn btn-primary btn-lg w-full"
-                disabled={isSubmitting}
+                className={`btn ${isSuccess ? 'btn-success' : 'btn-primary'} btn-lg w-full`}
+                disabled={isSubmitting || isSuccess}
                 id="login-submit"
-                style={{ marginTop: '0.5rem' }}
+                style={{
+                  marginTop: '0.5rem',
+                  ...(isSuccess && { background: 'var(--color-success)', color: 'white' })
+                }}
               >
-                {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Đang đăng nhập...</> : 'Đăng nhập'}
+                {isSuccess ? (
+                  <><CheckCircle2 size={18} /> Thành công!</>
+                ) : isSubmitting ? (
+                  <><Loader2 size={18} className="animate-spin" /> Đang đăng nhập...</>
+                ) : (
+                  'Đăng nhập'
+                )}
               </button>
             </form>
 
