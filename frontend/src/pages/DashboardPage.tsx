@@ -4,8 +4,8 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
-import { statsApi, transactionApi } from '../services/api.service';
+import { TrendingUp, TrendingDown, Wallet, AlertTriangle, AlertCircle } from 'lucide-react';
+import { statsApi, transactionApi, budgetApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
@@ -47,6 +47,20 @@ export default function DashboardPage() {
     queryFn: () => transactionApi.getAll({ limit: 5, page: 1 }),
   });
 
+  const { data: budgetData } = useQuery({
+    queryKey: ['budgets', now.getMonth() + 1, now.getFullYear()],
+    queryFn: () => budgetApi.getAll({ month: now.getMonth() + 1, year: now.getFullYear() }),
+  });
+
+  const alertThreshold = user?.settings?.alertThreshold ?? 0.8;
+
+  const budgetAlerts = useMemo(() => {
+    const all = budgetData?.data ?? [];
+    const over = all.filter((b: any) => b.percent >= 100);
+    const near = all.filter((b: any) => b.percent >= alertThreshold * 100 && b.percent < 100);
+    return [...over, ...near];
+  }, [budgetData, alertThreshold]);
+
   const pieData = useMemo(() =>
     (byCategory?.data ?? []).slice(0, 7).map((item: any) => ({
       name: item.category?.name ?? 'Khác',
@@ -58,6 +72,62 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-enter">
+      {/* Budget Alerts */}
+      {budgetAlerts.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          {budgetAlerts.map((b: any) => {
+            const isOver = b.percent >= 100;
+            return (
+              <div
+                key={b.id}
+                className="budget-alert"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: `1px solid ${isOver ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                  backgroundColor: isOver ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>{b.category?.icon ?? '📌'}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    {isOver
+                      ? <AlertCircle size={14} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+                      : <AlertTriangle size={14} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+                    }
+                    <span style={{
+                      fontSize: '0.85rem', fontWeight: 700,
+                      color: isOver ? 'var(--color-danger)' : 'var(--color-warning)',
+                    }}>
+                      {isOver ? 'Vượt hạn mức!' : 'Gần đạt ngưỡng!'}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                      {b.category?.name} — {b.percent}%
+                    </span>
+                  </div>
+                  <div style={{ height: 4, backgroundColor: 'var(--color-border)', borderRadius: 99 }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(b.percent, 100)}%`,
+                      borderRadius: 99,
+                      backgroundColor: isOver ? 'var(--color-danger)' : 'var(--color-warning)',
+                      transition: 'width 0.6s ease',
+                    }} />
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap',
+                  color: isOver ? 'var(--color-danger)' : 'var(--color-warning)',
+                }}>
+                  {fmt(b.spent)} / {fmt(b.monthlyLimit)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -174,11 +244,11 @@ export default function DashboardPage() {
               <p style={{ margin: 0 }}>Chưa có giao dịch nào</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {recentTx?.data?.map((tx: any) => (
-                <div key={tx.id} style={{
+                <div key={tx.id} className="transaction-row" style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '0.75rem 0', borderBottom: '1px solid var(--color-border)',
+                  padding: '0.75rem 0.5rem', borderBottom: '1px solid var(--color-border)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{

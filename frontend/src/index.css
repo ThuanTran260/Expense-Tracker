@@ -60,6 +60,13 @@
   box-sizing: border-box;
 }
 
+/* Smooth theme color transition — runs on background/color/border only.
+   Excludes animation-heavy elements to avoid conflicts. */
+body, .card, .stat-card, .modal, .sidebar, .form-input, .btn,
+.nav-item, .listbox-options, .listbox-option {
+  transition: background-color 0.3s ease, color 0.15s ease, border-color 0.3s ease;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -171,11 +178,13 @@ body {
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .card-body {
@@ -733,9 +742,51 @@ body {
 .dashboard-enter .stat-card:nth-child(2) { animation-delay: 0.1s; }
 .dashboard-enter .stat-card:nth-child(3) { animation-delay: 0.15s; }
 
+/* Charts grid — appear after stat cards */
+.dashboard-enter .grid-2 > .card {
+  animation: cardEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dashboard-enter .grid-2 > .card:nth-child(1) { animation-delay: 0.22s; }
+.dashboard-enter .grid-2 > .card:nth-child(2) { animation-delay: 0.32s; }
+
+/* Recent transactions card — last to appear */
+.dashboard-enter > .card:last-child {
+  animation: cardEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.4s;
+}
+
 @keyframes cardEntrance {
   from { opacity: 0; transform: translateY(14px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─────────────────────────────────────────────
+   TRANSACTION ROW HOVER
+   ───────────────────────────────────────────── */
+.transaction-row {
+  transition: background-color 0.15s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.15s ease;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+.transaction-row:hover {
+  background-color: rgba(99, 102, 241, 0.06);
+  transform: translateX(4px);
+  border-radius: var(--radius-sm);
+}
+
+/* ─────────────────────────────────────────────
+   BUDGET ALERT ANIMATIONS
+   ───────────────────────────────────────────── */
+.budget-alert {
+  animation: slideInAlert 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.budget-alert:nth-child(2) { animation-delay: 0.08s; }
+.budget-alert:nth-child(3) { animation-delay: 0.16s; }
+.budget-alert:nth-child(4) { animation-delay: 0.24s; }
+
+@keyframes slideInAlert {
+  from { opacity: 0; transform: translateX(-16px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 
 /* ─────────────────────────────────────────────

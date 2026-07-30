@@ -36,10 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Áp dụng theme khi user thay đổi
   useEffect(() => {
     if (user?.settings?.theme) {
-      document.documentElement.setAttribute(
-        'data-theme',
-        user.settings.theme.toLowerCase()
-      );
+      const themeValue = user.settings.theme.toLowerCase();
+      document.documentElement.setAttribute('data-theme', themeValue);
+      localStorage.setItem('expense_tracker_theme', themeValue);
     }
   }, [user?.settings?.theme]);
 
@@ -80,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.post('/auth/logout');
     } finally {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('expense_tracker_theme');
+      document.documentElement.removeAttribute('data-theme');
       setUser(null);
     }
   };
