@@ -30,6 +30,25 @@ export default function MonthYearPickerModal({
     }
   }, [isOpen, selectedYear]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      // Non-passive wheel listener on window to prevent background scroll
+      const preventDefaultWheel = (e: WheelEvent) => {
+        e.preventDefault();
+      };
+      window.addEventListener('wheel', preventDefaultWheel, { passive: false });
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener('wheel', preventDefaultWheel);
+      };
+    }
+  }, [isOpen]);
+
   // ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -56,6 +75,7 @@ export default function MonthYearPickerModal({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
     if (e.deltaY > 0) {
       handleNextYear();
     } else if (e.deltaY < 0) {
@@ -102,6 +122,7 @@ export default function MonthYearPickerModal({
             WebkitBackdropFilter: 'blur(18px)',
           }}
           onClick={(e) => e.target === e.currentTarget && onClose()}
+          onWheel={(e) => e.stopPropagation()}
         >
           <motion.div
             key="picker-card"
