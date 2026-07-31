@@ -1,263 +1,536 @@
-# Prompt — Cải thiện UX: Loading Button & Custom Category Dropdown
+# Dashboard Time Picker Redesign Prompt
 
-> Đưa prompt này kèm theo code component hiện tại (Modal thêm giao dịch + phần xử lý
-> danh mục) cho AI code. Đừng chỉ đưa prompt suông — AI cần thấy code thật mới sửa
-> đúng, không đoán/viết lại từ đầu.
+## Objective
 
----
+Redesign the Dashboard date selector of the expense management web application.
 
-## 1. Vai trò & bối cảnh
+The current dashboard displays a fixed month and year:
 
-```
-Bạn là Frontend Engineer chuyên về UI/UX và animation, đang cải thiện trải nghiệm cho
-modal "Thêm giao dịch mới" trong app Expense Tracker (React + TailwindCSS, theme dark).
+> Tháng 8/2026
 
-Yêu cầu SỬA TRÊN CODE HIỆN CÓ (mình sẽ paste code bên dưới), không viết lại toàn bộ
-component từ đầu. Giữ nguyên logic form, tên field, cách gọi API — chỉ cải thiện phần
-UX/animation theo yêu cầu dưới đây.
-```
+This must be replaced with a fully interactive, premium-looking Month & Year Picker inspired by Apple's design philosophy (iOS/macOS).
+
+The experience should feel modern, fluid, elegant, and highly polished.
 
 ---
 
-## 2. Hiện trạng (mô tả UI hiện tại — để AI hình dung dù không thấy ảnh)
+# Design Philosophy
 
-```
-- Modal "Thêm giao dịch mới" gồm: toggle Chi/Thu (2 nút), input số tiền, dropdown
-  "Danh mục", input ngày, textarea ghi chú, 2 nút "Hủy" / "Thêm giao dịch".
+The UI should follow these principles:
 
-- Vấn đề 1 — nút "Thêm giao dịch": khi bấm, có độ trễ do gọi API, nhưng UI không có
-  bất kỳ phản hồi trực quan nào trong lúc chờ -> người dùng thấy màn hình "đứng hình"
-  1-2 giây rồi mới đóng modal, tạo cảm giác app bị lag/đứng.
+- Apple Human Interface Guidelines
+- Minimalism
+- Smooth Motion
+- Glassmorphism
+- Premium interactions
+- High FPS animations (60fps+)
+- Natural spring physics
+- Micro-interactions everywhere
 
-- Vấn đề 2 — dropdown "Danh mục": đang dùng thẻ <select> mặc định của trình duyệt.
-  Danh sách có 13 mục (Ăn uống, Đầu tư, Di chuyển, Du lịch, Freelance, Giải trí,
-  Hóa đơn, Học tập, Khác (Chi), Khác (Thu), Lương, Mua sắm, Quần áo, Sức khỏe,
-  Thưởng), mỗi mục có icon emoji đi kèm. Giao diện native <select> nhìn cơ bản,
-  không animation, không đồng bộ với theme dark tím/indigo của app.
-```
+Avoid traditional HTML select components.
 
----
+Never use native browser dropdowns.
 
-## 3. Yêu cầu cụ thể
-
-### 3.1 Loading state cho nút "Thêm giao dịch"
-
-```
-- Bấm nút -> disable ngay lập tức (chống bấm 2 lần / double-submit)
-- Đổi nội dung nút thành spinner + text "Đang thêm..." trong lúc chờ API
-- Dùng CSS transition mượt (Tailwind: transition-all duration-200/300) cho việc
-  chuyển đổi trạng thái nút, tránh thay đổi UI đột ngột
-- Khi API trả về THÀNH CÔNG:
-  - Hiệu ứng đóng modal mượt (fade + scale nhẹ), không đóng phựt một cái
-  - Danh sách giao dịch/dashboard cập nhật có animation nhẹ (item mới fade-in hoặc
-    highlight brief 1-2s rồi tắt) để người dùng thấy rõ giao dịch vừa được thêm
-- Khi API LỖI:
-  - KHÔNG đóng modal, hiển thị thông báo lỗi ngay trong modal (toast hoặc inline
-    error text), giữ nguyên dữ liệu người dùng đã nhập
-  - Nút trở lại trạng thái bình thường để thử lại
-- An toàn: đặt timeout hợp lý (8-10s) — nếu quá thời gian đó API chưa phản hồi, hiển
-  thị lỗi "Có vẻ mạng chậm, thử lại nhé" thay vì loading vô thời hạn
-```
-
-### 3.2 Redesign dropdown "Danh mục"
-
-```
-- Thay <select> native bằng custom dropdown component. Chọn 1 trong các lựa chọn sau
-  (ưu tiên theo thứ tự, vì nhẹ và có sẵn accessibility):
-  1. Headless UI Listbox (nếu đã dùng Tailwind, tích hợp tự nhiên nhất)
-  2. Radix UI Select
-  3. shadcn/ui Select (nếu project đã cài shadcn)
-
-- Animation khi mở/đóng: fade + slide nhẹ (150-200ms), không giật, không lag khi có
-  13 items.
-
-- Hover / focus state: highlight item rõ ràng bằng background + transition màu mượt
-  (không đổi màu đột ngột).
-
-- Item đang được chọn: có dấu check (✓) hoặc background riêng biệt để phân biệt rõ
-  với các item khác.
-
-- Vì danh sách khá dài (13 mục): thêm scroll mượt bên trong dropdown (không để tràn
-  ra ngoài modal). Nếu sau này danh mục tăng lên nhiều, cân nhắc thêm ô search nhỏ ở
-  đầu dropdown để lọc nhanh.
-
-- Giữ nguyên icon emoji hiện có cho từng danh mục, chỉ chỉnh lại spacing/alignment
-  cho gọn gàng, chuyên nghiệp hơn.
-
-- Accessible: điều hướng được bằng bàn phím (mũi tên lên/xuống để chuyển item, Enter
-  để chọn, Esc để đóng dropdown) — đây là điểm cộng lớn khi demo cho nhà tuyển dụng.
-
-- Đồng bộ màu với theme hiện tại: nền tối, viền tím/indigo khi đang focus (giống màu
-  viền input số tiền/ngày trong modal hiện tại).
-```
+Everything must be custom.
 
 ---
 
-## 4. Ràng buộc kỹ thuật
+# Dashboard Header
 
-```
-- KHÔNG đổi field name, cấu trúc state form, hay cách gọi API hiện có — chỉ thay đổi
-  phần hiển thị (UI) và animation.
-- Ưu tiên thư viện nhẹ, có sẵn accessibility (Headless UI / Radix), tránh thêm
-  dependency nặng không cần thiết (ví dụ tránh cả 1 bộ UI kit lớn chỉ để lấy 1
-  component select).
-- Responsive: đảm bảo loading state và dropdown hoạt động tốt trên mobile (test ở
-  viewport 375px).
-- Không phá vỡ test hiện có (nếu đã có test cho form này, chạy lại test sau khi sửa).
-```
+Current
 
----
+Dashboard
 
-## 5. Tiêu chí nghiệm thu (Definition of Done)
+Tháng 8/2026
 
-```
-[ ] Bấm "Thêm giao dịch" có phản hồi trực quan ngay lập tức (spinner/disable), không
-    còn cảm giác đứng hình
-[ ] Trường hợp API lỗi được xử lý rõ ràng, nút không bị kẹt ở trạng thái loading mãi
-[ ] Dropdown danh mục có animation mượt, đúng theme dark, dùng được bằng bàn phím
-[ ] Test trên Chrome DevTools ở chế độ mạng chậm (Network throttling: Slow 3G) để
-    xác nhận loading state hiển thị đúng, không giật
-[ ] Test responsive ở mobile viewport
-[ ] Không phát sinh console error/warning mới
-```
+Replace with
+
+Dashboard
+
+[ 📅 August 2026 ▼ ]
+
+The date selector should look like a premium button.
+
+Properties
+
+- rounded-xl
+- subtle shadow
+- glass effect
+- hover elevation
+- smooth transition
+- cursor pointer
 
 ---
 
-## 7. BUG FIX BỔ SUNG — Dropdown đẩy layout, xuất hiện scrollbar dài toàn modal
+# Opening Animation
 
-> Gặp sau khi custom dropdown: list category khi mở ra bị render theo flow bình
-> thường (đẩy các field bên dưới xuống) thay vì nổi đè lên trên, khiến cả modal xuất
-> hiện 1 scrollbar dài chạy suốt chiều cao, thay vì chỉ có scrollbar nhỏ riêng cho
-> khung list.
+When clicking the date selector
 
-```
-Nguyên nhân: dropdown panel hiện đang render trong document flow bình thường (không
-có position: absolute), nên khi mở ra nó chiếm chỗ thật trong layout, đẩy các phần tử
-sau nó (nút Hủy/Thêm giao dịch...) xuống, làm tổng chiều cao nội dung modal vượt quá
-khung hiển thị -> trình duyệt tự thêm scrollbar cho CẢ modal.
+DO NOT instantly show a dropdown.
 
-Yêu cầu sửa:
+Instead
 
-1. Dropdown panel PHẢI định vị nổi (floating), không chiếm chỗ trong layout:
-   - Nút trigger (ô "— Chọn danh mục —") cần có `position: relative`
-   - Panel danh sách cần có `position: absolute; top: 100%; left: 0; right: 0;
-     z-index: 50` (Tailwind: `absolute top-full left-0 right-0 z-50`)
-   - Panel phải "đè" lên trên các field bên dưới (Ngày, Ghi chú...), KHÔNG đẩy chúng
-     xuống.
+Animate a floating panel.
 
-2. Giới hạn chiều cao panel + chỉ 1 scrollbar RIÊNG cho panel này:
-   - `max-height` cỡ 5-6 items (ví dụ max-h-60 / 240px), `overflow-y: auto` CHỈ đặt
-     trên panel này
-   - TUYỆT ĐỐI không đặt overflow-y-auto hay max-height nào ở modal wrapper/container
-     cha chỉ vì dropdown — modal cha giữ nguyên overflow tự nhiên của nó
-   - Style scrollbar mỏng, tinh tế cho riêng panel (VD: `scrollbar-thin
-     scrollbar-thumb-slate-600 scrollbar-track-transparent` nếu dùng plugin
-     tailwind-scrollbar, hoặc custom ::-webkit-scrollbar width 4-6px)
+Animation sequence
 
-3. Nếu modal cha có `overflow: hidden` hoặc `overflow-y: auto` với chiều cao cố định
-   (rất có thể đang là nguyên nhân dropdown bị "kẹt"/clip): dùng giải pháp Portal để
-   panel render thẳng ra ngoài DOM tree của modal (render vào document.body), tránh bị
-   cha clip mất. Nếu đang dùng Headless UI Listbox, chuyển sang dùng kèm
-   `@headlessui/react` Portal, hoặc đơn giản nhất là đổi qua Radix UI Select /
-   shadcn/ui Select — cả hai đều tự động Portal ra ngoài, tránh toàn bộ vấn đề clip +
-   đẩy layout này mà không cần tự xử lý CSS phức tạp (khuyến nghị nếu đang gặp bug
-   này nhiều lần).
+Opacity:
+0 → 1
 
-4. Khi panel đóng lại: layout modal phải trở về đúng chiều cao ban đầu ngay lập tức,
-   không để lại khoảng trống hay giật layout (layout shift).
+Scale:
+0.94 → 1
 
-Tiêu chí kiểm tra sau khi sửa:
-[ ] Mở dropdown: các field bên dưới (Ngày, Ghi chú, nút Hủy/Thêm) KHÔNG bị đẩy xuống
-[ ] Chỉ có đúng 1 scrollbar nhỏ, nằm bên trong khung list category — không còn
-    scrollbar dài chạy suốt modal
-[ ] Đóng dropdown: layout trở lại bình thường ngay, không giật
-[ ] Test với modal ở màn hình nhỏ (mobile) — dropdown vẫn hiển thị đúng, không bị cắt
-```
+TranslateY:
+-15px → 0
+
+Blur:
+12px → 0
+
+Duration
+
+250–350ms
+
+Animation Type
+
+Spring
+
+Recommended Framer Motion
+
+type: spring
+
+stiffness: 350
+
+damping: 28
+
+mass: 0.8
+
+Everything should feel soft and responsive.
 
 ---
 
-## 8. CHI TIẾT KỸ THUẬT — Animation cho nút "Thêm giao dịch" (bổ sung theo yêu cầu)
+# Background
 
-> Bổ sung chi tiết hơn cho mục 3.1, dùng khi muốn AI code chính xác từng bước thay vì
-> chỉ mô tả chung chung.
+When picker opens
 
-```
-Áp dụng pattern "Icon-swap button": nút GIỮ NGUYÊN kích thước, chỉ đổi nội dung bên
-trong qua 3 trạng thái, dùng thư viện framer-motion để crossfade mượt giữa các state.
+Blur entire dashboard.
 
-State machine của nút (chỉ có đúng 3 trạng thái, không hơn):
-1. idle    -> hiển thị text "Thêm giao dịch"
-2. loading -> hiển thị spinner xoay (icon Loader2 từ lucide-react, class animate-spin)
-              + text "Đang thêm..."
-3. success -> hiển thị icon CheckCircle (lucide-react) + text "Đã thêm!" trong
-              khoảng 500-600ms, rồi mới đóng modal
+Backdrop
 
-Timing cụ thể (đừng để AI tự chọn số tùy ý):
-- Chuyển giữa các state: dùng AnimatePresence + motion.span của framer-motion,
-  crossfade (opacity + y dịch nhẹ 4px), duration 150-200ms
-- Spinner xoay: 0.8s/vòng, lặp vô hạn trong lúc loading
-- State success giữ tối thiểu 500ms trước khi đóng modal (để mắt người kịp nhận ra,
-  quá nhanh sẽ như không có gì xảy ra)
-- Modal đóng: fade + scale-down nhẹ (từ scale-100 về scale-95, opacity về 0),
-  duration 200ms
+backdrop-filter: blur(18px)
 
-Code pattern tham khảo (AI điều chỉnh theo cấu trúc component thật, đây chỉ là khung):
+Dark overlay
 
-  const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'success'
+rgba(0,0,0,.35)
 
-  async function handleSubmit() {
-    setStatus('loading')
-    try {
-      await addTransaction(formData)
-      setStatus('success')
-      await new Promise(r => setTimeout(r, 550))
-      closeModal()
-    } catch (err) {
-      setStatus('idle')
-      showErrorToast(err.message)
-    }
-  }
-
-  <button disabled={status !== 'idle'} onClick={handleSubmit}>
-    <AnimatePresence mode="wait">
-      {status === 'idle' && (
-        <motion.span key="idle" initial={{opacity:0}} animate={{opacity:1}}
-          exit={{opacity:0}}>Thêm giao dịch</motion.span>
-      )}
-      {status === 'loading' && (
-        <motion.span key="loading" initial={{opacity:0}} animate={{opacity:1}}
-          exit={{opacity:0}} className="flex items-center gap-2">
-          <Loader2 className="animate-spin" size={16} /> Đang thêm...
-        </motion.span>
-      )}
-      {status === 'success' && (
-        <motion.span key="success" initial={{opacity:0, scale:0.8}}
-          animate={{opacity:1, scale:1}} className="flex items-center gap-2">
-          <CheckCircle size={16} /> Đã thêm!
-        </motion.span>
-      )}
-    </AnimatePresence>
-  </button>
-
-Dependency cần cài (nếu chưa có):
-  npm install framer-motion lucide-react
-
-Nâng cấp thêm nếu muốn ấn tượng hơn (không bắt buộc): đổi sang pattern "width-morph"
-kiểu nút Pay của Stripe — nút co lại thành hình tròn chứa spinner thay vì giữ nguyên
-kích thước. Chỉ làm bước này SAU KHI bản Icon-swap đã chạy ổn định, đừng làm luôn từ
-đầu vì animate width/border-radius khó hơn animate opacity nhiều.
-```
+Fade in smoothly.
 
 ---
 
-## 9. Cách dùng prompt này
+# Picker Layout
 
-```
-1. Mở file component Modal thêm giao dịch (và component Select nếu tách riêng)
-2. Copy nguyên nội dung 2 file đó, paste ngay phía trên hoặc dưới prompt này
-3. Đưa cho AI code (Claude Code/Cursor...) trong 1 lượt duy nhất — vì đây là task sửa
-   UI cụ thể trên code có sẵn, không cần chia nhỏ nhiều lượt như prompt kiến trúc hệ
-   thống trước đó
-4. Sau khi AI sửa xong: tự tay test lại theo mục 5 (Definition of Done) trước khi
-   commit, đừng chỉ nhìn code là "có vẻ đúng" rồi push luôn
-```
+Center popup.
+
+Rounded 24px
+
+Glass effect
+
+Shadow
+
+Large padding
+
+Example
+
+╭────────────────────────────╮
+
+Choose Period
+
+────────────────────────────
+
+◀ 2026 ▶
+
+────────────────────────────
+
+Jan Feb Mar Apr
+
+May Jun Jul Aug
+
+Sep Oct Nov Dec
+
+────────────────────────────
+
+Today
+
+╰────────────────────────────╯
+
+---
+
+# Year Navigation
+
+The year can be changed by
+
+Left arrow
+
+Right arrow
+
+OR
+
+Mouse wheel
+
+OR
+
+Trackpad gesture
+
+Animation
+
+Sliding transition
+
+Previous year slides left
+
+Next year slides right
+
+Spring animation
+
+---
+
+# Month Grid
+
+Display all 12 months.
+
+Selected month
+
+- Purple gradient
+- Slight glow
+- Scale 1.05
+- Bold text
+
+Hover
+
+Scale
+
+1 → 1.04
+
+Background brightens
+
+Shadow increases
+
+Transition
+
+180ms
+
+---
+
+# Alternative Mode
+
+Provide an optional iOS Wheel Picker.
+
+Three wheels
+
+Month
+
+Year
+
+(Optional Day if needed later)
+
+Wheel behavior
+
+Momentum scrolling
+
+Snap to center
+
+Inertia
+
+Soft easing
+
+Exactly like iOS Date Picker.
+
+---
+
+# Dashboard Update
+
+When user selects a month
+
+DO NOT refresh page.
+
+Instead
+
+Fetch new statistics.
+
+Animate numbers.
+
+Income
+
+CountUp animation
+
+Expense
+
+CountUp animation
+
+Balance
+
+CountUp animation
+
+Duration
+
+700ms
+
+---
+
+# Chart Animation
+
+Charts should morph smoothly.
+
+Do NOT disappear then re-render.
+
+Animate
+
+Bars
+
+Height interpolation
+
+Lines
+
+Path morphing
+
+Pie
+
+Angle interpolation
+
+Duration
+
+700~900ms
+
+Ease
+
+easeInOutQuart
+
+---
+
+# Loading State
+
+Instead of spinner
+
+Use Skeleton UI
+
+Cards
+
+Skeleton shimmer
+
+Charts
+
+Animated placeholder
+
+Do not block interaction.
+
+---
+
+# Hover Effects
+
+Cards
+
+translateY(-4px)
+
+Shadow increases
+
+Border glows slightly
+
+Background becomes brighter
+
+Transition
+
+250ms
+
+---
+
+# Glassmorphism
+
+Picker
+
+background:
+rgba(30,30,40,.75)
+
+backdrop-filter:
+blur(24px)
+
+border:
+1px solid rgba(255,255,255,.08)
+
+shadow:
+0 20px 60px rgba(0,0,0,.35)
+
+---
+
+# Responsive
+
+Desktop
+
+Floating popup
+
+Tablet
+
+Bottom sheet
+
+Mobile
+
+Bottom sheet
+
+Height
+
+70%
+
+Rounded top corners
+
+Drag to close
+
+Spring animation
+
+Exactly like iOS.
+
+---
+
+# Accessibility
+
+Keyboard support
+
+Arrow keys
+
+Enter
+
+Escape
+
+Tab
+
+Focus ring
+
+ARIA labels
+
+Screen reader friendly
+
+---
+
+# Performance
+
+Avoid unnecessary rerenders.
+
+Use memoization.
+
+Lazy render charts.
+
+Maintain 60fps.
+
+Animations must use transform and opacity.
+
+Avoid animating width and height whenever possible.
+
+---
+
+# Tech Stack
+
+Preferred
+
+React
+
+Next.js
+
+TailwindCSS
+
+Framer Motion
+
+shadcn/ui
+
+Recharts
+
+React Query
+
+date-fns
+
+Use TypeScript.
+
+Use reusable components.
+
+Folder suggestion
+
+components/
+
+    Dashboard/
+
+        DatePicker.tsx
+
+        MonthGrid.tsx
+
+        YearSwitcher.tsx
+
+        WheelPicker.tsx
+
+        DashboardCards.tsx
+
+        DashboardCharts.tsx
+
+hooks/
+
+    useDashboardData.ts
+
+lib/
+
+    date.ts
+
+---
+
+# API Behavior
+
+When month changes
+
+Call
+
+GET /dashboard?month=8&year=2026
+
+Receive
+
+Income
+
+Expense
+
+Balance
+
+Category Summary
+
+Trend Data
+
+Update UI with animation.
+
+---
+
+# Code Quality
+
+Follow Clean Architecture.
+
+Reusable components.
+
+No duplicated code.
+
+Strict TypeScript.
+
+Readable naming.
+
+Responsive.
+
+Accessible.
+
+Maintainable.
+
+---
+
+# Expected Feeling
+
+The final interaction should feel similar to
+
+- iOS Date Picker
+- macOS System Settings
+- Apple Wallet
+- Apple Calendar
+- Apple Music
+
+The animation should be subtle, premium, fluid, and polished rather than flashy.
+
+Every transition should feel intentional and elegant.
+
+The user should immediately perceive the application as a high-end, professional financial dashboard.

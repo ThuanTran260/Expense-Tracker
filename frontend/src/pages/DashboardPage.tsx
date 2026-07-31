@@ -1,21 +1,19 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, AlertTriangle, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, AlertTriangle, AlertCircle, Calendar, ChevronDown } from 'lucide-react';
 import { statsApi, transactionApi, budgetApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 import { useExchangeRate } from '../hooks/useExchangeRate';
 import { useTranslation } from '../contexts/LanguageContext';
+import AnimatedNumber from '../components/Dashboard/AnimatedNumber';
+import MonthYearPickerModal from '../components/Dashboard/MonthYearPickerModal';
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
-
-// Current month/year
-const now = new Date();
-const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -23,6 +21,21 @@ export default function DashboardPage() {
   const { formatWithCurrency } = useExchangeRate();
   const currency = (user?.settings?.currency ?? 'VND') as 'USD' | 'VND';
   const fmt = (n: number) => formatWithCurrency(n, currency);
+
+  // Dynamic Selected Month & Year State
+  const now = useMemo(() => new Date(), []);
+  const [selectedDate, setSelectedDate] = useState({
+    month: now.getMonth() + 1,
+    year: now.getFullYear(),
+  });
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  // Compute ISO From and To range for query
+  const { from, to } = useMemo(() => {
+    const f = new Date(selectedDate.year, selectedDate.month - 1, 1).toISOString();
+    const tIso = new Date(selectedDate.year, selectedDate.month, 0, 23, 59, 59).toISOString();
+    return { from: f, to: tIso };
+  }, [selectedDate]);
 
   const { data: summary, isLoading: loadingSummary } = useQuery({
     queryKey: ['stats', 'summary', from, to],
@@ -45,8 +58,8 @@ export default function DashboardPage() {
   });
 
   const { data: budgetData } = useQuery({
-    queryKey: ['budgets', now.getMonth() + 1, now.getFullYear()],
-    queryFn: () => budgetApi.getAll({ month: now.getMonth() + 1, year: now.getFullYear() }),
+    queryKey: ['budgets', selectedDate.month, selectedDate.year],
+    queryFn: () => budgetApi.getAll({ month: selectedDate.month, year: selectedDate.year }),
   });
 
   const alertThreshold = user?.settings?.alertThreshold ?? 0.8;
@@ -67,8 +80,23 @@ export default function DashboardPage() {
     [byCategory, t]
   );
 
+  // Month Display String
+  const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthDisplay = activeLang === 'en'
+    ? `${monthNamesEn[selectedDate.month - 1]} ${selectedDate.year}`
+    : `Tháng ${selectedDate.month}/${selectedDate.year}`;
+
   return (
     <div className="dashboard-enter">
+      {/* Apple-Style Month/Year Picker Modal */}
+      <MonthYearPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        selectedMonth={selectedDate.month}
+        selectedYear={selectedDate.year}
+        onChange={(m, y) => setSelectedDate({ month: m, year: y })}
+      />
+
       {/* Budget Alerts */}
       {budgetAlerts.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
@@ -125,22 +153,51 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Header */}
+      {/* Header with Apple-Style Glassmorphic Date Button Trigger */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{t('dashboard.title')}</h1>
           <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            {t('dashboard.month')} {now.getMonth() + 1}/{now.getFullYear()}
+            {t('nav.appSubtitle')}
           </p>
         </div>
+
+        {/* Premium Interactive Date Picker Button Trigger */}
+        <motion.button
+          whileHover={{ scale: 1.02, elevation: 4 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => setIsPickerOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            padding: '0.55rem 1.1rem',
+            borderRadius: 'var(--radius-md, 14px)',
+            background: 'var(--color-surface, rgba(30, 30, 45, 0.6))',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+            color: 'var(--color-text-primary)',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          id="date-picker-trigger"
+        >
+          <Calendar size={16} style={{ color: 'var(--color-primary)' }} />
+          <span>{monthDisplay}</span>
+          <ChevronDown size={14} style={{ color: 'var(--color-text-muted)', marginLeft: 2 }} />
+        </motion.button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards with Rolling Number Animation */}
       <div className="grid-3 mb-6">
         <div className="stat-card">
           <span className="label">💰 {t('dashboard.totalIncome')}</span>
           <span className="amount income">
-            {loadingSummary ? '—' : fmt(summary?.totalIncome ?? 0)}
+            {loadingSummary ? '—' : <AnimatedNumber value={summary?.totalIncome ?? 0} formatter={fmt} />}
           </span>
           <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--color-success)' }}>
             <TrendingUp size={14} /> {t('dashboard.incomeThisMonth')}
@@ -150,7 +207,7 @@ export default function DashboardPage() {
         <div className="stat-card">
           <span className="label">💸 {t('dashboard.totalExpense')}</span>
           <span className="amount expense">
-            {loadingSummary ? '—' : fmt(summary?.totalExpense ?? 0)}
+            {loadingSummary ? '—' : <AnimatedNumber value={summary?.totalExpense ?? 0} formatter={fmt} />}
           </span>
           <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--color-danger)' }}>
             <TrendingDown size={14} /> {t('dashboard.expenseThisMonth')}
@@ -162,7 +219,7 @@ export default function DashboardPage() {
           <span className="amount" style={{
             color: (summary?.balance ?? 0) >= 0 ? 'var(--color-success)' : 'var(--color-danger)'
           }}>
-            {loadingSummary ? '—' : fmt(summary?.balance ?? 0)}
+            {loadingSummary ? '—' : <AnimatedNumber value={summary?.balance ?? 0} formatter={fmt} />}
           </span>
           <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
             <Wallet size={14} /> {t('dashboard.incomeMinusExpense')}
