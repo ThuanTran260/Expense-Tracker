@@ -9,18 +9,20 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/transactions', icon: ArrowLeftRight, label: 'Giao dịch' },
-  { to: '/budgets', icon: PiggyBank, label: 'Ngân sách' },
-  { to: '/exchange-rates', icon: Coins, label: 'Tỷ giá' },
-  { to: '/settings', icon: Settings, label: 'Cài đặt' },
-];
+import { useTranslation } from '../contexts/LanguageContext';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const navItems = [
+    { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
+    { to: '/transactions', icon: ArrowLeftRight, label: t('nav.transactions') },
+    { to: '/budgets', icon: PiggyBank, label: t('nav.budgets') },
+    { to: '/exchange-rates', icon: Coins, label: t('nav.exchangeRates') },
+    { to: '/settings', icon: Settings, label: t('nav.settings') },
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -33,10 +35,10 @@ export default function Sidebar() {
       <div className="sidebar-logo">
         <h1>
           <Wallet size={20} color="#6366f1" />
-          Chi Tiêu
+          {t('nav.appName')}
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
-          Quản lý tài chính
+          {t('nav.appSubtitle')}
         </p>
       </div>
 
@@ -78,7 +80,7 @@ export default function Sidebar() {
         </div>
         <button className="nav-item" onClick={handleLogout} style={{ color: 'rgba(255,255,255,0.6)' }}>
           <LogOut size={16} />
-          Đăng xuất
+          {t('nav.logout')}
         </button>
       </div>
     </aside>

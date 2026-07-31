@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useExchangeRate } from '../hooks/useExchangeRate';
 import { statsApi } from '../services/api.service';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const now = new Date();
 const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -21,6 +22,7 @@ const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOS
 
 export default function ExchangeRatePage() {
   const { usdToVnd, rates, lastUpdated, isLoading, refetch } = useExchangeRate();
+  const { t } = useTranslation();
 
   // Converter State
   const [calcAmount, setCalcAmount] = useState<string>('100');
@@ -62,10 +64,10 @@ export default function ExchangeRatePage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Coins color="#6366f1" size={26} /> Tỷ Giá Hối Đoái Real-Time
+            <Coins color="#6366f1" size={26} /> {t('exchange.title')}
           </h1>
           <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            Theo dõi tỷ giá thị trường trực tiếp & quy đổi tiền tệ tự động
+            {t('exchange.subtitle')}
           </p>
         </div>
         <motion.button
@@ -76,7 +78,7 @@ export default function ExchangeRatePage() {
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
           <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-          Cập nhật tỷ giá
+          {t('exchange.refreshRate')}
         </motion.button>
       </div>
 
@@ -95,10 +97,10 @@ export default function ExchangeRatePage() {
                   color: '#10b981', fontSize: '0.75rem', fontWeight: 700,
                 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} className="animate-pulse" />
-                  LIVE RATE
+                  {t('exchange.liveRate')}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  Cập nhật lần cuối: {lastUpdated}
+                  {t('exchange.lastUpdated')} {lastUpdated}
                 </span>
               </div>
               <h2 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
@@ -134,13 +136,13 @@ export default function ExchangeRatePage() {
         <div className="card">
           <div className="card-body">
             <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Zap size={18} style={{ color: '#f59e0b' }} /> Công Cụ Quy Đổi Trực Tiếp
+              <Zap size={18} style={{ color: '#f59e0b' }} /> {t('exchange.calculatorTitle')}
             </h3>
 
             {/* Input From */}
             <div className="form-group mb-3">
               <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                Số tiền ({calcFrom})
+                {t('exchange.amountLabel')} ({calcFrom})
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -149,14 +151,14 @@ export default function ExchangeRatePage() {
                   style={{ fontSize: '1.1rem', fontWeight: 700, flex: 1 }}
                   value={calcAmount}
                   onChange={(e) => setCalcAmount(e.target.value)}
-                  placeholder="Nhập số tiền..."
+                  placeholder="100"
                 />
                 <button
                   type="button"
                   className="btn btn-ghost"
                   onClick={handleSwap}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid var(--color-border)' }}
-                  title="Đổi chiều quy đổi"
+                  title={t('exchange.swapDirection')}
                 >
                   <ArrowLeftRight size={16} />
                   <span>{calcFrom}</span>
@@ -171,7 +173,7 @@ export default function ExchangeRatePage() {
               marginBottom: '1rem',
             }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                Kết quả quy đổi tương đương ({calcFrom === 'USD' ? 'VND' : 'USD'}):
+                {t('exchange.equivalentResult')} ({calcFrom === 'USD' ? 'VND' : 'USD'}):
               </span>
               <p style={{ margin: '0.35rem 0 0', fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-success)' }}>
                 {calcFrom === 'USD'
@@ -200,7 +202,7 @@ export default function ExchangeRatePage() {
         <div className="card">
           <div className="card-body">
             <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={18} style={{ color: '#6366f1' }} /> Tài Chính Tháng Này Quy Đổi
+              <Sparkles size={18} style={{ color: '#6366f1' }} /> {t('exchange.financialImpactTitle')}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -213,7 +215,7 @@ export default function ExchangeRatePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <TrendingUp size={20} style={{ color: 'var(--color-success)' }} />
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>Tổng Thu Nhập</p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{t('exchange.totalIncome')}</p>
                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>VND & USD</p>
                   </div>
                 </div>
@@ -232,7 +234,7 @@ export default function ExchangeRatePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <TrendingDown size={20} style={{ color: 'var(--color-danger)' }} />
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>Tổng Chi Tiêu</p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{t('exchange.totalExpense')}</p>
                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>VND & USD</p>
                   </div>
                 </div>
@@ -251,7 +253,7 @@ export default function ExchangeRatePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <Wallet size={20} style={{ color: 'var(--color-primary)' }} />
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>Số Dư Thực Tế</p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{t('exchange.actualBalance')}</p>
                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>VND & USD</p>
                   </div>
                 </div>
@@ -271,17 +273,17 @@ export default function ExchangeRatePage() {
       <div className="card">
         <div className="card-body">
           <h3 style={{ margin: '0 0 1rem', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Globe2 size={18} style={{ color: 'var(--color-primary)' }} /> Bảng Tỷ Giá Các Ngoại Tệ So Với VND
+            <Globe2 size={18} style={{ color: 'var(--color-primary)' }} /> {t('exchange.majorCurrenciesTitle')}
           </h3>
 
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Ngoại Tệ</th>
-                  <th>Mã ISO</th>
-                  <th style={{ textAlign: 'right' }}>Giá Mua / Quy Đổi (VND)</th>
-                  <th style={{ textAlign: 'right' }}>Tỷ Giá / USD</th>
+                  <th>{t('exchange.currency')}</th>
+                  <th>{t('exchange.isoCode')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('exchange.buyRate')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('exchange.rateVsUsd')}</th>
                 </tr>
               </thead>
               <tbody>

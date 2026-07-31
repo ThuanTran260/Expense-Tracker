@@ -8,6 +8,8 @@ import { Plus, Trash2, X, AlertTriangle, Check, ChevronDown } from 'lucide-react
 import { Listbox, Transition } from '@headlessui/react';
 import { budgetApi, categoryApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
+import { useExchangeRate } from '../hooks/useExchangeRate';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const budgetSchema = z.object({
   categoryId: z.string().min(1, 'Vui lòng chọn danh mục'),
@@ -17,20 +19,18 @@ const budgetSchema = z.object({
 });
 type BudgetForm = z.infer<typeof budgetSchema>;
 
-function formatCurrency(amount: number, currency = 'VND') {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(amount);
-}
-
 export default function BudgetPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const { formatWithCurrency } = useExchangeRate();
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [newBudgetId, setNewBudgetId] = useState<string | null>(null);
-  const currency = user?.settings?.currency ?? 'VND';
+  const currency = (user?.settings?.currency ?? 'VND') as 'USD' | 'VND';
   const alertThreshold = user?.settings?.alertThreshold ?? 0.8;
-  const fmt = (n: number) => formatCurrency(n, currency);
+  const fmt = (n: number) => formatWithCurrency(n, currency);
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -92,9 +92,9 @@ export default function BudgetPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Ngân sách</h1>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{t('budget.title')}</h1>
           <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            Theo dõi hạn mức chi tiêu
+            {t('budget.subtitle')}
           </p>
         </div>
         <div className="flex gap-3 items-center">
@@ -102,7 +102,7 @@ export default function BudgetPage() {
           <select className="form-input" style={{ width: 100 }} value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))} id="budget-month">
             {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
+              <option key={i + 1} value={i + 1}>{t('dashboard.month')} {i + 1}</option>
             ))}
           </select>
           <select className="form-input" style={{ width: 90 }} value={selectedYear}
@@ -110,7 +110,7 @@ export default function BudgetPage() {
             {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
           <button className="btn btn-primary btn-sm" onClick={() => { setSubmitError(null); setShowModal(true); }} id="add-budget-btn">
-            <Plus size={16} /> Thêm ngân sách
+            <Plus size={16} /> {t('budget.addBudget')}
           </button>
         </div>
       </div>
@@ -122,9 +122,9 @@ export default function BudgetPage() {
         </div>
       ) : budgets.length === 0 ? (
         <div className="empty-state">
-          <p>Chưa có ngân sách nào cho tháng {selectedMonth}/{selectedYear}</p>
+          <p>{t('budget.noBudgets')}</p>
           <button className="btn btn-primary mt-4" onClick={() => setShowModal(true)}>
-            <Plus size={16} /> Tạo ngân sách đầu tiên
+            <Plus size={16} /> {t('budget.addBudget')}
           </button>
         </div>
       ) : (
@@ -143,7 +143,7 @@ export default function BudgetPage() {
                       <div>
                         <p style={{ margin: 0, fontWeight: 700 }}>{budget.category?.name}</p>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                          Đã chi: {fmt(budget.spent)} / {fmt(budget.monthlyLimit)}
+                          {t('budget.spent')}: {fmt(budget.spent)} / {fmt(budget.monthlyLimit)}
                         </p>
                       </div>
                       {(isOver || isWarning) && (
@@ -153,7 +153,7 @@ export default function BudgetPage() {
                           fontSize: '0.8rem', fontWeight: 600,
                         }}>
                           <AlertTriangle size={14} />
-                          {isOver ? 'Vượt hạn mức!' : `Cảnh báo ${budget.percent}%`}
+                          {isOver ? t('budget.overLimit') : `${t('budget.nearThreshold')} (${budget.percent}%)`}
                         </div>
                       )}
                     </div>
@@ -166,7 +166,7 @@ export default function BudgetPage() {
                         {budget.percent}%
                       </span>
                       <button className="btn btn-danger btn-sm" onClick={() => {
-                        if (confirm('Xóa ngân sách này?')) deleteMutation.mutate(budget.id);
+                        if (confirm(t('budget.confirmDelete'))) deleteMutation.mutate(budget.id);
                       }}>
                         <Trash2 size={14} />
                       </button>
@@ -181,8 +181,8 @@ export default function BudgetPage() {
                   </div>
 
                   <div className="flex justify-between mt-2" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                    <span>Còn lại: {budget.remaining > 0 ? fmt(budget.remaining) : '0'}</span>
-                    <span>Hạn mức: {fmt(budget.monthlyLimit)}</span>
+                    <span>{t('budget.remaining')}: {budget.remaining > 0 ? fmt(budget.remaining) : '0'}</span>
+                    <span>{t('budget.monthlyLimit')}: {fmt(budget.monthlyLimit)}</span>
                   </div>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function BudgetPage() {
         <div className={`modal-overlay${isClosing ? ' closing' : ''}`} onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div className={`modal${isClosing ? ' closing' : ''}`}>
             <div className="modal-header">
-              <h2>Thêm ngân sách</h2>
+              <h2>{t('budget.addBudget')}</h2>
               <button className="btn btn-ghost btn-sm" onClick={closeModal}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit((data) => createMutation.mutate(data))}>
@@ -207,7 +207,7 @@ export default function BudgetPage() {
                   </div>
                 )}
                 <div className="form-group">
-                  <label className="form-label">Danh mục chi tiêu</label>
+                  <label className="form-label">{t('budget.selectCategory')}</label>
                   <Controller
                     control={control}
                     name="categoryId"
@@ -218,7 +218,7 @@ export default function BudgetPage() {
                             <span style={{ color: value ? 'inherit' : 'var(--color-text-muted)' }}>
                               {value 
                                 ? categories.find((c: any) => c.id === value)?.icon + ' ' + categories.find((c: any) => c.id === value)?.name
-                                : '— Chọn danh mục —'}
+                                : t('tx.selectCategory')}
                             </span>
                             <ChevronDown size={16} style={{ color: 'var(--color-text-muted)' }} />
                           </Listbox.Button>
@@ -246,7 +246,7 @@ export default function BudgetPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Hạn mức tháng ({currency})</label>
+                  <label className="form-label">{t('budget.monthlyLimit')} ({currency})</label>
                   <Controller
                     name="monthlyLimit"
                     control={control}
@@ -270,13 +270,13 @@ export default function BudgetPage() {
 
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Tháng</label>
+                    <label className="form-label">{t('dashboard.month')}</label>
                     <select {...register('month', { valueAsNumber: true })} className="form-input">
-                      {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>)}
+                      {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>{t('dashboard.month')} {i + 1}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Năm</label>
+                    <label className="form-label">{t('budget.monthYear')}</label>
                     <select {...register('year', { valueAsNumber: true })} className="form-input">
                       {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
                     </select>
@@ -284,14 +284,14 @@ export default function BudgetPage() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-ghost" onClick={closeModal}>Hủy</button>
+                <button type="button" className="btn btn-ghost" onClick={closeModal}>{t('tx.cancel')}</button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting} id="budget-submit">
                   {isSubmitting ? (
                     <>
                       <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
-                      Đang lưu...
+                      {t('tx.saving')}
                     </>
-                  ) : 'Tạo ngân sách'}
+                  ) : t('budget.addBudget')}
                 </button>
               </div>
             </form>

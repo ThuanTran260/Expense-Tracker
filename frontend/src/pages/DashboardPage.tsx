@@ -8,6 +8,7 @@ import { TrendingUp, TrendingDown, Wallet, AlertTriangle, AlertCircle } from 'lu
 import { statsApi, transactionApi, budgetApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 import { useExchangeRate } from '../hooks/useExchangeRate';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
 
@@ -18,6 +19,7 @@ const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOS
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t, language: activeLang } = useTranslation();
   const { formatWithCurrency } = useExchangeRate();
   const currency = (user?.settings?.currency ?? 'VND') as 'USD' | 'VND';
   const fmt = (n: number) => formatWithCurrency(n, currency);
@@ -58,11 +60,11 @@ export default function DashboardPage() {
 
   const pieData = useMemo(() =>
     (byCategory?.data ?? []).slice(0, 7).map((item: any) => ({
-      name: item.category?.name ?? 'Khác',
+      name: item.category?.name ?? t('dashboard.other'),
       value: item.total,
       percentage: item.percentage,
     })),
-    [byCategory]
+    [byCategory, t]
   );
 
   return (
@@ -95,7 +97,7 @@ export default function DashboardPage() {
                       fontSize: '0.85rem', fontWeight: 700,
                       color: isOver ? 'var(--color-danger)' : 'var(--color-warning)',
                     }}>
-                      {isOver ? 'Vượt hạn mức!' : 'Gần đạt ngưỡng!'}
+                      {isOver ? t('dashboard.budgetOverLimit') : t('dashboard.budgetNearLimit')}
                     </span>
                     <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
                       {b.category?.name} — {b.percent}%
@@ -126,9 +128,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Dashboard</h1>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{t('dashboard.title')}</h1>
           <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            Tháng {now.getMonth() + 1}/{now.getFullYear()}
+            {t('dashboard.month')} {now.getMonth() + 1}/{now.getFullYear()}
           </p>
         </div>
       </div>
@@ -136,34 +138,34 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="grid-3 mb-6">
         <div className="stat-card">
-          <span className="label">💰 Tổng thu</span>
+          <span className="label">💰 {t('dashboard.totalIncome')}</span>
           <span className="amount income">
             {loadingSummary ? '—' : fmt(summary?.totalIncome ?? 0)}
           </span>
           <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--color-success)' }}>
-            <TrendingUp size={14} /> Thu nhập tháng này
+            <TrendingUp size={14} /> {t('dashboard.incomeThisMonth')}
           </div>
         </div>
 
         <div className="stat-card">
-          <span className="label">💸 Tổng chi</span>
+          <span className="label">💸 {t('dashboard.totalExpense')}</span>
           <span className="amount expense">
             {loadingSummary ? '—' : fmt(summary?.totalExpense ?? 0)}
           </span>
           <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--color-danger)' }}>
-            <TrendingDown size={14} /> Chi tiêu tháng này
+            <TrendingDown size={14} /> {t('dashboard.expenseThisMonth')}
           </div>
         </div>
 
         <div className="stat-card">
-          <span className="label">🏦 Số dư</span>
+          <span className="label">🏦 {t('dashboard.balance')}</span>
           <span className="amount" style={{
             color: (summary?.balance ?? 0) >= 0 ? 'var(--color-success)' : 'var(--color-danger)'
           }}>
             {loadingSummary ? '—' : fmt(summary?.balance ?? 0)}
           </span>
           <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-            <Wallet size={14} /> Thu - Chi
+            <Wallet size={14} /> {t('dashboard.incomeMinusExpense')}
           </div>
         </div>
       </div>
@@ -174,7 +176,7 @@ export default function DashboardPage() {
         <div className="card">
           <div className="card-body">
             <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 700 }}>
-              Chi tiêu theo danh mục
+              {t('dashboard.expenseByCategory')}
             </h3>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
@@ -191,7 +193,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             ) : (
               <div className="empty-state" style={{ padding: '3rem 1rem' }}>
-                <p style={{ margin: 0 }}>Chưa có dữ liệu chi tiêu tháng này</p>
+                <p style={{ margin: 0 }}>{t('dashboard.noExpenseData')}</p>
               </div>
             )}
           </div>
@@ -201,7 +203,7 @@ export default function DashboardPage() {
         <div className="card">
           <div className="card-body">
             <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 700 }}>
-              Xu hướng Thu / Chi
+              {t('dashboard.incomeVsExpenseTrend')}
             </h3>
             {(timeline?.data?.length ?? 0) > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
@@ -211,13 +213,13 @@ export default function DashboardPage() {
                   <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : `${v}`} />
                   <Tooltip formatter={(value: any) => fmt(Number(value ?? 0))} />
                   <Legend />
-                  <Bar dataKey="income" name="Thu" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expense" name="Chi" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="income" name={t('dashboard.incomeLabel')} fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expense" name={t('dashboard.expenseLabel')} fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="empty-state" style={{ padding: '3rem 1rem' }}>
-                <p style={{ margin: 0 }}>Chưa có dữ liệu</p>
+                <p style={{ margin: 0 }}>{t('dashboard.noData')}</p>
               </div>
             )}
           </div>
@@ -228,15 +230,15 @@ export default function DashboardPage() {
       <div className="card">
         <div className="card-body">
           <div className="flex items-center justify-between mb-4">
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Giao dịch gần đây</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('dashboard.recentTransactions')}</h3>
             <a href="/transactions" style={{ color: 'var(--color-primary)', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 600 }}>
-              Xem tất cả →
+              {t('dashboard.viewAll')}
             </a>
           </div>
 
           {(recentTx?.data?.length ?? 0) === 0 ? (
             <div className="empty-state" style={{ padding: '2rem' }}>
-              <p style={{ margin: 0 }}>Chưa có giao dịch nào</p>
+              <p style={{ margin: 0 }}>{t('dashboard.noTransactions')}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -256,7 +258,7 @@ export default function DashboardPage() {
                     <div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{tx.category?.name}</p>
                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                        {new Date(tx.date).toLocaleDateString('vi-VN')}
+                        {new Date(tx.date).toLocaleDateString(activeLang === 'en' ? 'en-US' : 'vi-VN')}
                         {tx.note ? ` · ${tx.note}` : ''}
                       </p>
                     </div>

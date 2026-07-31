@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { transactionApi, categoryApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 import { useExchangeRate } from '../hooks/useExchangeRate';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const txSchema = z.object({
   amount: z.number().positive('Số tiền phải lớn hơn 0'),
@@ -23,6 +24,7 @@ type TxForm = z.infer<typeof txSchema>;
 
 export default function TransactionsPage() {
   const { user } = useAuth();
+  const { t, language: activeLang } = useTranslation();
   const { formatWithCurrency } = useExchangeRate();
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
@@ -85,7 +87,7 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['budgets'] }); 
       setNewTxId(res.transaction?.id ?? null);
       setSubmitStatus('success');
-      triggerToast('✨ Đã thêm giao dịch thành công!');
+      triggerToast(t('tx.successAdd'));
       setTimeout(() => {
         closeModal(); 
         setSubmitStatus('idle');
@@ -106,7 +108,7 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['stats'] }); 
       qc.invalidateQueries({ queryKey: ['budgets'] }); 
       setSubmitStatus('success');
-      triggerToast('✨ Đã cập nhật giao dịch!');
+      triggerToast(t('tx.successUpdate'));
       setTimeout(() => {
         closeModal(); 
         setSubmitStatus('idle');
@@ -124,7 +126,7 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['transactions'] }); 
       qc.invalidateQueries({ queryKey: ['stats'] }); 
       qc.invalidateQueries({ queryKey: ['budgets'] }); 
-      triggerToast('🗑️ Đã xóa giao dịch');
+      triggerToast(t('tx.successDelete'));
     },
   });
 
@@ -160,7 +162,7 @@ export default function TransactionsPage() {
     const timeoutTimer = setTimeout(() => {
       if (submitStatus === 'loading') {
         setSubmitStatus('idle');
-        setSubmitError('Có vẻ mạng chậm, thử lại nhé!');
+        setSubmitError(t('tx.slowNetwork'));
       }
     }, 8000);
 
@@ -208,17 +210,17 @@ export default function TransactionsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Giao dịch</h1>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{t('tx.title')}</h1>
           <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            {meta?.total ?? 0} giao dịch
+            {meta?.total ?? 0} {t('tx.count')}
           </p>
         </div>
         <div className="flex gap-3">
           <motion.button whileTap={{ scale: 0.96 }} className="btn btn-ghost btn-sm" onClick={handleExport} id="export-csv-btn">
-            <Download size={16} /> Xuất CSV
+            <Download size={16} /> {t('tx.exportCsv')}
           </motion.button>
           <motion.button whileTap={{ scale: 0.96 }} className="btn btn-primary btn-sm" onClick={openCreate} id="add-transaction-btn">
-            <Plus size={16} /> Thêm giao dịch
+            <Plus size={16} /> {t('tx.addTx')}
           </motion.button>
         </div>
       </div>
@@ -232,7 +234,7 @@ export default function TransactionsPage() {
               <input
                 className="form-input"
                 style={{ paddingLeft: '2.25rem' }}
-                placeholder="Tìm kiếm ghi chú..."
+                placeholder={t('tx.searchPlaceholder')}
                 value={filters.search}
                 onChange={(e) => setFilters(p => ({ ...p, search: e.target.value, page: 1 }))}
                 id="transaction-search"
@@ -240,13 +242,13 @@ export default function TransactionsPage() {
             </div>
             <select className="form-input" style={{ width: 140 }} value={filters.type}
               onChange={(e) => setFilters(p => ({ ...p, type: e.target.value, page: 1 }))} id="filter-type">
-              <option value="">Tất cả</option>
-              <option value="INCOME">Thu</option>
-              <option value="EXPENSE">Chi</option>
+              <option value="">{t('tx.all')}</option>
+              <option value="INCOME">{t('tx.income')}</option>
+              <option value="EXPENSE">{t('tx.expense')}</option>
             </select>
             <select className="form-input" style={{ width: 160 }} value={filters.categoryId}
               onChange={(e) => setFilters(p => ({ ...p, categoryId: e.target.value, page: 1 }))} id="filter-category">
-              <option value="">Tất cả danh mục</option>
+              <option value="">{t('tx.allCategories')}</option>
               {categories.map((c: any) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
             </select>
           </div>
@@ -259,12 +261,12 @@ export default function TransactionsPage() {
           <table className="data-table" id="transactions-table">
             <thead>
               <tr>
-                <th>Ngày</th>
-                <th>Danh mục</th>
-                <th>Loại</th>
-                <th>Ghi chú</th>
-                <th style={{ textAlign: 'right' }}>Số tiền</th>
-                <th style={{ textAlign: 'center' }}>Thao tác</th>
+                <th>{t('tx.date')}</th>
+                <th>{t('tx.category')}</th>
+                <th>{t('tx.type')}</th>
+                <th>{t('tx.note')}</th>
+                <th style={{ textAlign: 'right' }}>{t('tx.amount')}</th>
+                <th style={{ textAlign: 'center' }}>{t('tx.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -278,13 +280,13 @@ export default function TransactionsPage() {
                 ))
               ) : transactions.length === 0 ? (
                 <tr><td colSpan={6}>
-                  <div className="empty-state"><p>Không tìm thấy giao dịch nào</p></div>
+                  <div className="empty-state"><p>{t('tx.notFound')}</p></div>
                 </td></tr>
               ) : (
                 transactions.map((tx: any) => (
                   <tr key={tx.id} className={tx.id === newTxId ? 'highlight-new' : ''}>
                     <td style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                      {new Date(tx.date).toLocaleDateString('vi-VN')}
+                      {new Date(tx.date).toLocaleDateString(activeLang === 'en' ? 'en-US' : 'vi-VN')}
                     </td>
                     <td>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -293,7 +295,7 @@ export default function TransactionsPage() {
                     </td>
                     <td>
                       <span className={`badge ${tx.type === 'INCOME' ? 'badge-income' : 'badge-expense'}`}>
-                        {tx.type === 'INCOME' ? 'Thu' : 'Chi'}
+                        {tx.type === 'INCOME' ? t('tx.income') : t('tx.expense')}
                       </span>
                     </td>
                     <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
@@ -309,7 +311,7 @@ export default function TransactionsPage() {
                           <Edit2 size={14} />
                         </button>
                         <button className="btn btn-danger btn-sm" onClick={() => {
-                          if (confirm('Xóa giao dịch này?')) deleteMutation.mutate(tx.id);
+                          if (confirm(t('tx.confirmDelete'))) deleteMutation.mutate(tx.id);
                         }}>
                           <Trash2 size={14} />
                         </button>
@@ -340,7 +342,7 @@ export default function TransactionsPage() {
         <div className={`modal-overlay${isClosing ? ' closing' : ''}`} onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div className={`modal${isClosing ? ' closing' : ''}`}>
             <div className="modal-header">
-              <h2>{editTx ? 'Sửa giao dịch' : 'Thêm giao dịch mới'}</h2>
+              <h2>{editTx ? t('tx.editTx') : t('tx.newTxTitle')}</h2>
               <button className="btn btn-ghost btn-sm" onClick={closeModal}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -353,7 +355,7 @@ export default function TransactionsPage() {
 
                 {/* Mobbin Segmented Control Pill Slider */}
                 <div className="form-group">
-                  <label className="form-label">Loại giao dịch</label>
+                  <label className="form-label">{t('tx.type')}</label>
                   <div style={{ position: 'relative', display: 'flex', padding: 4, background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)' }}>
                     <button
                       type="button"
@@ -379,7 +381,7 @@ export default function TransactionsPage() {
                           transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                         />
                       )}
-                      💸 Chi
+                      💸 {t('tx.expense')}
                     </button>
 
                     <button
@@ -406,13 +408,13 @@ export default function TransactionsPage() {
                           transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                         />
                       )}
-                      💰 Thu
+                      💰 {t('tx.income')}
                     </button>
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Số tiền ({currency})</label>
+                  <label className="form-label">{t('tx.amount')} ({currency})</label>
                   <Controller
                     name="amount"
                     control={control}
@@ -435,7 +437,7 @@ export default function TransactionsPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Danh mục ({currentType === 'EXPENSE' ? 'Chi' : 'Thu'})</label>
+                  <label className="form-label">{t('tx.category')} ({currentType === 'EXPENSE' ? t('tx.expense') : t('tx.income')})</label>
                   <Controller
                     control={control}
                     name="categoryId"
@@ -446,7 +448,7 @@ export default function TransactionsPage() {
                             <span style={{ color: value ? 'inherit' : 'var(--color-text-muted)' }}>
                               {value 
                                 ? categories.find((c: any) => c.id === value)?.icon + ' ' + categories.find((c: any) => c.id === value)?.name
-                                : '— Chọn danh mục —'}
+                                : t('tx.selectCategory')}
                             </span>
                             <ChevronDown size={16} style={{ color: 'var(--color-text-muted)' }} />
                           </Listbox.Button>
@@ -474,18 +476,18 @@ export default function TransactionsPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Ngày</label>
+                  <label className="form-label">{t('tx.date')}</label>
                   <input {...register('date')} type="date" className={`form-input${errors.date ? ' error' : ''}`} id="tx-date" />
                   {errors.date && <span className="form-error">{errors.date.message}</span>}
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Ghi chú (tùy chọn)</label>
-                  <input {...register('note')} className="form-input" placeholder="Ghi chú..." id="tx-note" />
+                  <label className="form-label">{t('tx.optionalNote')}</label>
+                  <input {...register('note')} className="form-input" placeholder={t('tx.note')} id="tx-note" />
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-ghost" onClick={closeModal}>Hủy</button>
+                <button type="button" className="btn btn-ghost" onClick={closeModal}>{t('tx.cancel')}</button>
                 
                 {/* 3-State Icon-Swap Framer Motion Button */}
                 <motion.button
@@ -505,7 +507,7 @@ export default function TransactionsPage() {
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.15 }}
                       >
-                        {editTx ? 'Cập nhật' : 'Thêm giao dịch'}
+                        {editTx ? t('tx.update') : t('tx.save')}
                       </motion.span>
                     )}
                     {submitStatus === 'loading' && (
@@ -517,7 +519,7 @@ export default function TransactionsPage() {
                         transition={{ duration: 0.15 }}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                       >
-                        <Loader2 className="animate-spin" size={16} /> Đang lưu...
+                        <Loader2 className="animate-spin" size={16} /> {t('tx.saving')}
                       </motion.span>
                     )}
                     {submitStatus === 'success' && (
@@ -529,7 +531,7 @@ export default function TransactionsPage() {
                         transition={{ duration: 0.18 }}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ffffff' }}
                       >
-                        <CheckCircle2 size={16} /> Đã lưu!
+                        <CheckCircle2 size={16} /> {t('tx.saved')}
                       </motion.span>
                     )}
                   </AnimatePresence>
