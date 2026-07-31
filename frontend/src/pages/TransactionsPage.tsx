@@ -1,11 +1,12 @@
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Edit2, Trash2, X, Download, Search, Check, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Search, Check, ChevronDown, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { Listbox, Transition } from '@headlessui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { transactionApi, categoryApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -30,10 +31,17 @@ export default function TransactionsPage() {
   const [isClosing, setIsClosing] = useState(false);
   const [editTx, setEditTx] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [newTxId, setNewTxId] = useState<string | null>(null);
   const [filters, setFilters] = useState({ type: '', categoryId: '', search: '', page: 1 });
   const currency = user?.settings?.currency ?? 'VND';
   const fmt = (n: number) => formatCurrency(n, currency);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['transactions', filters],
@@ -52,10 +60,24 @@ export default function TransactionsPage() {
   });
   const categories = categoriesData?.data ?? [];
 
-  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors } } =
     useForm<TxForm>({ resolver: zodResolver(txSchema), defaultValues: { type: 'EXPENSE', date: new Date().toISOString().split('T')[0] } });
 
   const currentType = watch('type');
+  const currentCategory = watch('categoryId');
+
+  // Filter categories based on Income / Expense type
+  const filteredCategories = categories.filter((c: any) => c.type === currentType);
+
+  // Auto update selected category when type changes if current category is invalid
+  useEffect(() => {
+    if (filteredCategories.length > 0) {
+      const exists = filteredCategories.some((c: any) => c.id === currentCategory);
+      if (!exists) {
+        setValue('categoryId', filteredCategories[0].id);
+      }
+    }
+  }, [currentType, filteredCategories, currentCategory, setValue]);
 
   const createMutation = useMutation({
     mutationFn: (data: TxForm) => transactionApi.create({ ...data, date: new Date(data.date).toISOString() }),
@@ -64,10 +86,16 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['stats'] }); 
       qc.invalidateQueries({ queryKey: ['budgets'] }); 
       setNewTxId(res.transaction?.id ?? null);
-      closeModal(); 
+      setSubmitStatus('success');
+      triggerToast('✨ Đã thêm giao dịch thành công!');
+      setTimeout(() => {
+        closeModal(); 
+        setSubmitStatus('idle');
+      }, 550);
       setTimeout(() => setNewTxId(null), 2500);
     },
     onError: (error: any) => {
+      setSubmitStatus('idle');
       setSubmitError(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     }
   });
@@ -79,9 +107,15 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['transactions'] }); 
       qc.invalidateQueries({ queryKey: ['stats'] }); 
       qc.invalidateQueries({ queryKey: ['budgets'] }); 
-      closeModal(); 
+      setSubmitStatus('success');
+      triggerToast('✨ Đã cập nhật giao dịch!');
+      setTimeout(() => {
+        closeModal(); 
+        setSubmitStatus('idle');
+      }, 550);
     },
     onError: (error: any) => {
+      setSubmitStatus('idle');
       setSubmitError(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     }
   });
@@ -92,13 +126,15 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['transactions'] }); 
       qc.invalidateQueries({ queryKey: ['stats'] }); 
       qc.invalidateQueries({ queryKey: ['budgets'] }); 
+      triggerToast('🗑️ Đã xóa giao dịch');
     },
   });
 
-  const openCreate = () => { setSubmitError(null); setEditTx(null); reset({ type: 'EXPENSE', date: new Date().toISOString().split('T')[0] }); setShowModal(true); };
+  const openCreate = () => { setSubmitError(null); setSubmitStatus('idle'); setEditTx(null); reset({ type: 'EXPENSE', date: new Date().toISOString().split('T')[0] }); setShowModal(true); };
 
   const openEdit = (tx: any) => {
     setSubmitError(null);
+    setSubmitStatus('idle');
     setEditTx(tx);
     reset({
       amount: tx.amount, type: tx.type, categoryId: tx.categoryId,
@@ -113,13 +149,28 @@ export default function TransactionsPage() {
       setShowModal(false);
       setIsClosing(false);
       setEditTx(null);
+      setSubmitStatus('idle');
       reset();
     }, 240);
   };
 
   const onSubmit = (data: TxForm) => {
-    if (editTx) updateMutation.mutate({ id: editTx.id, data });
-    else createMutation.mutate(data);
+    setSubmitStatus('loading');
+    setSubmitError(null);
+
+    // Safety 8-second network timeout handler
+    const timeoutTimer = setTimeout(() => {
+      if (submitStatus === 'loading') {
+        setSubmitStatus('idle');
+        setSubmitError('Có vẻ mạng chậm, thử lại nhé!');
+      }
+    }, 8000);
+
+    if (editTx) {
+      updateMutation.mutate({ id: editTx.id, data }, { onSettled: () => clearTimeout(timeoutTimer) });
+    } else {
+      createMutation.mutate(data, { onSettled: () => clearTimeout(timeoutTimer) });
+    }
   };
 
   const handleExport = async () => {
@@ -140,6 +191,22 @@ export default function TransactionsPage() {
 
   return (
     <div>
+      {/* Glass Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="glass-toast"
+          >
+            <Sparkles size={18} style={{ color: '#6366f1' }} />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -149,12 +216,12 @@ export default function TransactionsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="btn btn-ghost btn-sm" onClick={handleExport} id="export-csv-btn">
+          <motion.button whileTap={{ scale: 0.96 }} className="btn btn-ghost btn-sm" onClick={handleExport} id="export-csv-btn">
             <Download size={16} /> Xuất CSV
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={openCreate} id="add-transaction-btn">
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.96 }} className="btn btn-primary btn-sm" onClick={openCreate} id="add-transaction-btn">
             <Plus size={16} /> Thêm giao dịch
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -204,9 +271,13 @@ export default function TransactionsPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '3rem' }}>
-                  <div className="spinner" style={{ margin: '0 auto' }} />
-                </td></tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={6} style={{ padding: '0.85rem 1rem' }}>
+                      <div className="skeleton-row" style={{ width: i % 2 === 0 ? '90%' : '75%' }} />
+                    </td>
+                  </tr>
+                ))
               ) : transactions.length === 0 ? (
                 <tr><td colSpan={6}>
                   <div className="empty-state"><p>Không tìm thấy giao dịch nào</p></div>
@@ -281,23 +352,62 @@ export default function TransactionsPage() {
                     {submitError}
                   </div>
                 )}
+
+                {/* Mobbin Segmented Control Pill Slider */}
                 <div className="form-group">
                   <label className="form-label">Loại giao dịch</label>
-                  <div className="type-segmented-control">
+                  <div style={{ position: 'relative', display: 'flex', padding: 4, background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)' }}>
                     <button
                       type="button"
-                      className={`type-toggle-btn ${currentType === 'EXPENSE' ? 'active-expense' : 'btn-inactive'}`}
                       onClick={() => setValue('type', 'EXPENSE')}
+                      style={{
+                        flex: 1, position: 'relative', zIndex: 2, padding: '0.65rem 1rem',
+                        border: 'none', background: 'transparent', cursor: 'pointer',
+                        fontWeight: 700, fontSize: '0.9rem',
+                        color: currentType === 'EXPENSE' ? '#ffffff' : 'var(--color-text-secondary)',
+                        transition: 'color 0.2s ease',
+                      }}
                       id="tx-type-expense"
                     >
+                      {currentType === 'EXPENSE' && (
+                        <motion.div
+                          layoutId="typePill"
+                          style={{
+                            position: 'absolute', inset: 0, borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'var(--color-danger)',
+                            boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
+                            zIndex: -1,
+                          }}
+                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                        />
+                      )}
                       💸 Chi
                     </button>
+
                     <button
                       type="button"
-                      className={`type-toggle-btn ${currentType === 'INCOME' ? 'active-income' : 'btn-inactive'}`}
                       onClick={() => setValue('type', 'INCOME')}
+                      style={{
+                        flex: 1, position: 'relative', zIndex: 2, padding: '0.65rem 1rem',
+                        border: 'none', background: 'transparent', cursor: 'pointer',
+                        fontWeight: 700, fontSize: '0.9rem',
+                        color: currentType === 'INCOME' ? '#ffffff' : 'var(--color-text-secondary)',
+                        transition: 'color 0.2s ease',
+                      }}
                       id="tx-type-income"
                     >
+                      {currentType === 'INCOME' && (
+                        <motion.div
+                          layoutId="typePill"
+                          style={{
+                            position: 'absolute', inset: 0, borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'var(--color-success)',
+                            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                            zIndex: -1,
+                          }}
+                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                        />
+                      )}
                       💰 Thu
                     </button>
                   </div>
@@ -327,7 +437,7 @@ export default function TransactionsPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Danh mục</label>
+                  <label className="form-label">Danh mục ({currentType === 'EXPENSE' ? 'Chi' : 'Thu'})</label>
                   <Controller
                     control={control}
                     name="categoryId"
@@ -344,7 +454,7 @@ export default function TransactionsPage() {
                           </Listbox.Button>
                           <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0" enter="listbox-enter">
                             <Listbox.Options className="listbox-options">
-                              {categories.map((c: any) => (
+                              {filteredCategories.map((c: any) => (
                                 <Listbox.Option key={c.id} value={c.id} className={({ active, selected }) => `listbox-option ${active ? 'active' : ''} ${selected ? 'selected' : ''}`}>
                                   {({ selected }) => (
                                     <>
@@ -378,14 +488,54 @@ export default function TransactionsPage() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={closeModal}>Hủy</button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting} id="tx-submit">
-                  {isSubmitting ? (
-                    <>
-                      <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
-                      Đang lưu...
-                    </>
-                  ) : editTx ? 'Cập nhật' : 'Thêm giao dịch'}
-                </button>
+                
+                {/* 3-State Icon-Swap Framer Motion Button */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={submitStatus !== 'idle'}
+                  id="tx-submit"
+                  style={{ minWidth: 120 }}
+                >
+                  <AnimatePresence mode="wait">
+                    {submitStatus === 'idle' && (
+                      <motion.span
+                        key="idle"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        {editTx ? 'Cập nhật' : 'Thêm giao dịch'}
+                      </motion.span>
+                    )}
+                    {submitStatus === 'loading' && (
+                      <motion.span
+                        key="loading"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                      >
+                        <Loader2 className="animate-spin" size={16} /> Đang lưu...
+                      </motion.span>
+                    )}
+                    {submitStatus === 'success' && (
+                      <motion.span
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ffffff' }}
+                      >
+                        <CheckCircle2 size={16} /> Đã lưu!
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </div>
             </form>
           </div>
@@ -395,3 +545,4 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
