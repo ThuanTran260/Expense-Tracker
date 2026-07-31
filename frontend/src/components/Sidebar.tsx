@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   PiggyBank,
+  Coins,
   Settings,
   LogOut,
   Wallet,
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Giao dịch' },
   { to: '/budgets', icon: PiggyBank, label: 'Ngân sách' },
+  { to: '/exchange-rates', icon: Coins, label: 'Tỷ giá' },
   { to: '/settings', icon: Settings, label: 'Cài đặt' },
 ];
 

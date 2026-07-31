@@ -9,6 +9,7 @@ import { Listbox, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { transactionApi, categoryApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
+import { useExchangeRate } from '../hooks/useExchangeRate';
 
 const txSchema = z.object({
   amount: z.number().positive('Số tiền phải lớn hơn 0'),
@@ -20,12 +21,9 @@ const txSchema = z.object({
 
 type TxForm = z.infer<typeof txSchema>;
 
-function formatCurrency(amount: number, currency = 'VND') {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(amount);
-}
-
 export default function TransactionsPage() {
   const { user } = useAuth();
+  const { formatWithCurrency } = useExchangeRate();
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -35,8 +33,8 @@ export default function TransactionsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [newTxId, setNewTxId] = useState<string | null>(null);
   const [filters, setFilters] = useState({ type: '', categoryId: '', search: '', page: 1 });
-  const currency = user?.settings?.currency ?? 'VND';
-  const fmt = (n: number) => formatCurrency(n, currency);
+  const currency = (user?.settings?.currency ?? 'VND') as 'USD' | 'VND';
+  const fmt = (n: number) => formatWithCurrency(n, currency);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);

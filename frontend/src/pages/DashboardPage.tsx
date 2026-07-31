@@ -7,15 +7,9 @@ import {
 import { TrendingUp, TrendingDown, Wallet, AlertTriangle, AlertCircle } from 'lucide-react';
 import { statsApi, transactionApi, budgetApi } from '../services/api.service';
 import { useAuth } from '../contexts/AuthContext';
+import { useExchangeRate } from '../hooks/useExchangeRate';
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
-
-function formatCurrency(amount: number, currency = 'VND') {
-  if (currency === 'VND') {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-  }
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-}
 
 // Current month/year
 const now = new Date();
@@ -24,8 +18,9 @@ const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOS
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const currency = user?.settings?.currency ?? 'VND';
-  const fmt = (n: number) => formatCurrency(n, currency);
+  const { formatWithCurrency } = useExchangeRate();
+  const currency = (user?.settings?.currency ?? 'VND') as 'USD' | 'VND';
+  const fmt = (n: number) => formatWithCurrency(n, currency);
 
   const { data: summary, isLoading: loadingSummary } = useQuery({
     queryKey: ['stats', 'summary', from, to],

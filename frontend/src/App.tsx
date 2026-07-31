@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import TransactionsPage from './pages/TransactionsPage';
 import BudgetPage from './pages/BudgetPage';
 import SettingsPage from './pages/SettingsPage';
+import ExchangeRatePage from './pages/ExchangeRatePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function App() {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
               <Route path="budgets" element={<BudgetPage />} />
+              <Route path="exchange-rates" element={<ExchangeRatePage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
 
