@@ -176,7 +176,81 @@ Tiêu chí kiểm tra sau khi sửa:
 
 ---
 
-## 8. Cách dùng prompt này
+## 8. CHI TIẾT KỸ THUẬT — Animation cho nút "Thêm giao dịch" (bổ sung theo yêu cầu)
+
+> Bổ sung chi tiết hơn cho mục 3.1, dùng khi muốn AI code chính xác từng bước thay vì
+> chỉ mô tả chung chung.
+
+```
+Áp dụng pattern "Icon-swap button": nút GIỮ NGUYÊN kích thước, chỉ đổi nội dung bên
+trong qua 3 trạng thái, dùng thư viện framer-motion để crossfade mượt giữa các state.
+
+State machine của nút (chỉ có đúng 3 trạng thái, không hơn):
+1. idle    -> hiển thị text "Thêm giao dịch"
+2. loading -> hiển thị spinner xoay (icon Loader2 từ lucide-react, class animate-spin)
+              + text "Đang thêm..."
+3. success -> hiển thị icon CheckCircle (lucide-react) + text "Đã thêm!" trong
+              khoảng 500-600ms, rồi mới đóng modal
+
+Timing cụ thể (đừng để AI tự chọn số tùy ý):
+- Chuyển giữa các state: dùng AnimatePresence + motion.span của framer-motion,
+  crossfade (opacity + y dịch nhẹ 4px), duration 150-200ms
+- Spinner xoay: 0.8s/vòng, lặp vô hạn trong lúc loading
+- State success giữ tối thiểu 500ms trước khi đóng modal (để mắt người kịp nhận ra,
+  quá nhanh sẽ như không có gì xảy ra)
+- Modal đóng: fade + scale-down nhẹ (từ scale-100 về scale-95, opacity về 0),
+  duration 200ms
+
+Code pattern tham khảo (AI điều chỉnh theo cấu trúc component thật, đây chỉ là khung):
+
+  const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'success'
+
+  async function handleSubmit() {
+    setStatus('loading')
+    try {
+      await addTransaction(formData)
+      setStatus('success')
+      await new Promise(r => setTimeout(r, 550))
+      closeModal()
+    } catch (err) {
+      setStatus('idle')
+      showErrorToast(err.message)
+    }
+  }
+
+  <button disabled={status !== 'idle'} onClick={handleSubmit}>
+    <AnimatePresence mode="wait">
+      {status === 'idle' && (
+        <motion.span key="idle" initial={{opacity:0}} animate={{opacity:1}}
+          exit={{opacity:0}}>Thêm giao dịch</motion.span>
+      )}
+      {status === 'loading' && (
+        <motion.span key="loading" initial={{opacity:0}} animate={{opacity:1}}
+          exit={{opacity:0}} className="flex items-center gap-2">
+          <Loader2 className="animate-spin" size={16} /> Đang thêm...
+        </motion.span>
+      )}
+      {status === 'success' && (
+        <motion.span key="success" initial={{opacity:0, scale:0.8}}
+          animate={{opacity:1, scale:1}} className="flex items-center gap-2">
+          <CheckCircle size={16} /> Đã thêm!
+        </motion.span>
+      )}
+    </AnimatePresence>
+  </button>
+
+Dependency cần cài (nếu chưa có):
+  npm install framer-motion lucide-react
+
+Nâng cấp thêm nếu muốn ấn tượng hơn (không bắt buộc): đổi sang pattern "width-morph"
+kiểu nút Pay của Stripe — nút co lại thành hình tròn chứa spinner thay vì giữ nguyên
+kích thước. Chỉ làm bước này SAU KHI bản Icon-swap đã chạy ổn định, đừng làm luôn từ
+đầu vì animate width/border-radius khó hơn animate opacity nhiều.
+```
+
+---
+
+## 9. Cách dùng prompt này
 
 ```
 1. Mở file component Modal thêm giao dịch (và component Select nếu tách riêng)
