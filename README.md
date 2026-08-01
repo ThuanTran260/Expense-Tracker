@@ -1,155 +1,225 @@
-# 💰 Expense Tracker — Ứng Dụng Quản Lý Chi Tiêu Cá Nhân Smart & Intuitive
+<div align="center">
 
-**Expense Tracker** là giải pháp quản lý tài chính cá nhân toàn diện, giúp bạn dễ dàng ghi chép thu chi, theo dõi ngân sách hàng tháng và phân tích thói quen tiêu dùng thông qua biểu đồ trực quan. Ứng dụng được xây dựng với kiến trúc hiện đại, hỗ trợ lưu trữ đám mây đồng bộ vĩnh viễn và giao diện tùy biến linh hoạt.
+  # 💸 Smart Expense Tracker — Quản Lý Tài Chính Thông Minh
+
+  **Ứng dụng Quản lý Chi tiêu Cá nhân Hiện đại, Thông minh & Chuẩn Enterprise**
+
+  [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+  [![Express.js](https://img.shields.io/badge/Express.js-4.19-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+  [![Prisma](https://img.shields.io/badge/Prisma_ORM-5.18-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+  [![License MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+
+  <p align="center">
+    <a href="#-tính-năng-nổi-bật">Tính Năng</a> •
+    <a href="#-kiến-trúc-hệ-thống">Kiến Trúc</a> •
+    <a href="#-công-nghệ-sử-dụng">Công Nghệ</a> •
+    <a href="#-hướng-dẫn-cài-đặt">Cài Đặt</a> •
+    <a href="#-tài-liệu-api">API Docs</a> •
+    <a href="#-roadmap">Roadmap</a>
+  </p>
+
+</div>
 
 ---
 
-## 🌟 Tính Năng Cốt Lõi
+## 📌 Giới Thiệu
 
-### 1. Quản Lý Thu - Chi & Giao Dịch
-* **Ghi chép nhanh chóng**: Thêm, sửa, xóa các khoản thu nhập hoặc chi tiêu với đầy đủ thông tin (số tiền, danh mục, ngày tháng, ghi chú).
-* **Danh mục linh hoạt**: Sử dụng bộ danh mục mặc định (Ăn uống, Di chuyển, Lương, Mua sắm...) hoặc tự tạo danh mục riêng theo nhu cầu cá nhân.
-* **Bộ lọc & Tìm kiếm thông minh**: Lọc giao dịch theo loại (Thu/Chi), khoảng thời gian, danh mục hoặc tìm kiếm nhanh theo từ khóa ghi chú.
-* **Phân trang dữ liệu**: Xử lý mượt mà danh sách giao dịch lớn với phân trang server-side.
-* **Xuất báo cáo (Export CSV)**: Trích xuất lịch sử giao dịch ra file CSV chuẩn UTF-8 (mở trực tiếp bằng Excel không lỗi font).
+**Smart Expense Tracker** là giải pháp quản lý tài chính cá nhân toàn diện, kết hợp trải nghiệm giao diện người dùng **Apple Human Interface (HIG)** cùng kiến trúc Backend chuẩn Enterprise. Ứng dụng giúp bạn kiểm soát dòng tiền, thiết lập ngân sách thông minh, quy đổi ngoại tệ thời gian thực và phân tích xu hướng thu chi với hiệu ứng chuyển động 60fps mượt mà.
 
-### 2. Ngân Sách & Cảnh Báo Thông Minh (Budgeting)
-* **Thiết lập hạn mức**: Đặt ngân sách chi tiêu tháng cho từng danh mục cụ thể.
-* **Theo dõi tiến độ trực quan**: Thanh tiến độ đổi màu tự động (**Xanh ➔ Vàng ➔ Đỏ**) tương ứng với mức độ tiêu dùng.
-* **Cảnh báo vượt hạn mức**: Tự động phát tín hiệu cảnh báo khi chi tiêu cán mốc 80% hoặc vượt 100% ngân sách đã đề ra.
+> 🌟 **Điểm đặc biệt**: Hệ thống lưu giữ cấu hình giao diện (Theme, Currency, Language, Ngưỡng cảnh báo) vĩnh viễn trên Database Cloud — tự động khôi phục chính xác trạng thái cài đặt khi đăng nhập trên bất kỳ thiết bị nào.
 
-### 3. Dashboard & Phân Tích Tài Chính
-* **Thống kê tổng quan**: Cập nhật số liệu Real-time về Tổng thu, Tổng chi và Số dư thực tế trong tháng.
-* **Biểu đồ tròn (Pie Chart)**: Trực quan hóa tỷ lệ phần trăm chi tiêu giữa các danh mục.
-* **Biểu đồ cột (Bar Chart)**: Theo dõi biến động Thu nhập vs Chi tiêu theo từng tháng.
-* **Giao dịch gần đây**: Hiển thị nhanh các dòng tiền mới phát sinh.
+---
 
-### 4. Cá Nhân Hóa & Bảo Mật
-* **Lưu cấu hình vĩnh viễn (`UserSettings`)**: Lưu giữ giao diện **Dark/Light Mode**, đơn vị tiền tệ (**VND / USD**), ngôn ngữ và ngưỡng cảnh báo trực tiếp trên CSDL Cloud. Đăng nhập ở bất kỳ thiết bị nào cũng khôi phục chính xác trạng thái cài đặt cũ.
-* **Bảo mật đa lớp**: Mã hóa mật khẩu chuẩn `bcryptjs`, cơ chế xác thực **Access Token (15m)** & **Refresh Token (7d)** lưu trong `HttpOnly Cookie` bảo vệ chống lỗ hổng XSS & CSRF.
+## 🌟 Tính Năng Nổi Bật
+
+### 📊 1. Dashboard Thống Kê Phong Cách Apple (Apple-Inspired UI)
+- **Apple Month/Year Picker**: Bộ chọn thời gian dạng Modal Glassmorphism với hiệu ứng Spring Physics mềm mại (`framer-motion`), hỗ trợ cuộn chuột đổi năm và iOS Bottom Sheet trên điện thoại.
+- **Rolling Number Animation (CountUp)**: Các chỉ số **Tổng thu**, **Tổng chi**, và **Số dư** tự động cuộn nhảy số mượt mà trong 700ms khi chọn tháng mới.
+- **Biểu đồ Trực quan (Recharts)**: Phân tích tỷ lệ chi tiêu theo danh mục (Pie Chart) và xu hướng Thu vs Chi qua các tháng (Bar Chart).
+- **Cảnh báo Ngân sách Real-Time**: Tự động phát hiện và cảnh báo các danh mục chi tiêu vượt mốc (80% / 100%).
+
+### 💸 2. Quản Lý Giao Dịch & Mobbin UX
+- **Chuyển đổi Thu / Chi (Segmented Pill Slider)**: Thanh chuyển đổi dạng Pill Slider với hiệu ứng Framer Motion mượt mà.
+- **Bộ lọc danh mục Động**: Tự động lọc danh mục tương ứng với loại giao dịch (Chi tiêu hay Thu nhập).
+- **Nút Lưu 3 Trạng thái (Icon-Swap)**: Nút bấm hiển thị trạng thái `Idle` ➔ `Loading` ➔ `Success Checkmark` mượt mà với bộ xử lý quá hạn mạng 8s (Safety Timeout).
+- **Xuất Báo Cáo CSV**: Trích xuất dữ liệu giao dịch ra file CSV chuẩn UTF-8 (mở trực tiếp trên Excel không bị lỗi font).
+- **Skeleton Shimmer Loader**: Hiển thị khung chờ mượt mà trong lúc tải dữ liệu.
+
+### 💱 3. Bảng Tỷ Giá Hối Đoái Real-Time & Quy Đổi Tự Động
+- **Live Exchange Rate Engine**: Kết nối API tỷ giá thị trường tự động (`open.er-api.com`).
+- **Bộ Quy Đổi 2 Chiều Trực Tiếp**: Tính toán nhanh giá trị quy đổi giữa USD, VND và các ngoại tệ lớn (EUR, JPY, GBP, AUD, SGD).
+- **Quy Đổi Tài Chính Song Song**: Xem đồng thời toàn bộ Thu nhập, Chi tiêu và Số dư dưới dạng cả **VND (₫)** lẫn **USD ($)**.
+
+### 🌐 4. Hệ Thống Đa Ngôn Ngữ (Full i18n Support)
+- Hỗ trợ chuyển đổi tức thì giữa **Tiếng Việt 🇻🇳** và **English 🇬🇧** không cần F5 hay tải lại trang.
+- Đồng bộ ngôn ngữ và đơn vị tiền tệ chính xác theo cấu hình tài khoản người dùng.
+
+### 🔐 5. Bảo Mật Enterprise & Lưu Cấu Hình Cloud
+- **Xác thực Đa lớp**: Cơ chế **JWT Access Token (15m)** và **Refresh Token (7d)** lưu trong `HttpOnly Cookie`, chống lỗ hổng XSS & CSRF.
+- **Mã hóa Mật khẩu**: Sử dụng `bcryptjs` với độ muối an toàn cao.
+- **Cài đặt vĩnh viễn (`UserSettings`)**: Lưu Theme (Light/Dark), Đơn vị tiền tệ (VND/USD), Ngôn ngữ (VI/EN) và Ngưỡng cảnh báo trực tiếp trên CSDL Cloud.
+
+---
+
+## 🏗️ Kiến Trúc Hệ Thống (System Architecture)
+
+```mermaid
+graph TD
+    Client[📱 Client Browser / Frontend] -->|Vite + React 18 + TS| ReactQuery[🔄 React Query Cache]
+    ReactQuery -->|Axios Interceptor + HttpOnly Cookies| ExpressAPI[⚡ Backend Express API]
+    
+    subgraph Backend Core
+        ExpressAPI -->|Zod Validation| Validators[🛡️ Validators & Middlewares]
+        Validators -->|JWT & Rate Limit| AuthMiddleware[🔑 Auth Middleware]
+        AuthMiddleware -->|Business Logic| Controllers[🎮 Controllers & Services]
+    end
+    
+    Controllers -->|Prisma ORM| DB[(🗄️ PostgreSQL Database)]
+    Controllers -->|Fetch Live Rates| ExternalAPI[🌐 Open Exchange Rates API]
+```
 
 ---
 
 ## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
-### Frontend
-* **Core**: React 18, Vite, TypeScript
-* **State & Data Fetching**: `@tanstack/react-query`, Axios (Auto-refresh token interceptor)
-* **Data Visualization**: Recharts
-* **Styling**: Vanilla CSS Design Tokens (Custom Properties) + TailwindCSS
-* **Form & Validation**: React Hook Form, Zod
-
-### Backend
-* **Runtime & Framework**: Node.js, Express, TypeScript
-* **Database & ORM**: PostgreSQL, Prisma ORM
-* **Authentication**: JWT, `bcryptjs`, `cookie-parser`
-* **Security & Utility**: Helmet.js, Express Rate Limit, Winston Logger, Zod Validation
-
-### DevOps & Infrastructure
-* **Containerization**: Docker, Docker Compose (Multi-stage build)
-* **CI/CD**: GitHub Actions
-* **Database Cloud**: Hỗ trợ kết nối Supabase / Railway / PostgreSQL local
+| Phân Loại | Công Nghệ & Thư Viện |
+| :--- | :--- |
+| **Frontend** | React 18, TypeScript, Vite, Framer Motion, Recharts, Lucide Icons, Headless UI |
+| **State & Data** | `@tanstack/react-query`, Axios (Auto-refresh interceptor), Context API |
+| **Styling** | Vanilla CSS Design Tokens (Custom Properties), Backdrop Blur Glassmorphism |
+| **Backend** | Node.js, Express.js, TypeScript, Prisma ORM, Zod, Helmet.js |
+| **Security** | JWT (Access/Refresh Tokens), `HttpOnly Cookies`, `bcryptjs`, Rate Limiter |
+| **Database** | PostgreSQL (Hỗ trợ Supabase / Railway / Docker Postgres local) |
+| **DevOps** | Docker, Docker Compose, GitHub Actions CI/CD |
 
 ---
 
-## 🚀 Hướng Dẫn Khởi Chạy
+## 📂 Cấu Trúc Thư Mục Dự Án
 
-### Cách 1: Chạy trực tiếp qua Node.js (Khuyên dùng khi Dev)
-
-#### 1. Khởi tạo Backend
-```bash
-cd backend
-
-# Copy file cấu hình môi trường
-cp .env.example .env
-
-# Cập nhật DATABASE_URL trong .env với PostgreSQL của bạn (hoặc Supabase URI)
-# DATABASE_URL="postgresql://postgres:password@localhost:5432/expense_tracker?schema=public"
-
-# Cài đặt dependencies
-npm install
-
-# Tạo bảng CSDL & nạp danh mục mặc định
-npx prisma db push
-npm run db:seed
-
-# Khởi chạy Backend API (http://localhost:5000)
-npm run dev
-```
-
-#### 2. Khởi tạo Frontend
-```bash
-cd frontend
-
-# Cài đặt dependencies & khởi chạy
-npm install
-npm run dev
-```
-👉 Mở trình duyệt tại: **`http://localhost:5173`**
-
----
-
-### Cách 2: Chạy toàn bộ qua Docker Compose
-
-Yêu cầu đã cài đặt **Docker Desktop**.
-
-```bash
-# Tại thư mục gốc dự án:
-docker compose up --build -d
-```
-Hệ thống sẽ tự động khởi chạy 3 dịch vụ:
-* **Frontend Web App**: `http://localhost` (Port 80)
-* **Backend API**: `http://localhost:5000`
-* **PostgreSQL Database**: `localhost:5432`
-
----
-
-## 🔮 Các Cải Tiến & Tính Năng Sắp Tới (Roadmap)
-
-Dự án đang tiếp tục được nâng cấp với các tính năng dự kiến ra mắt trong các phiên bản tiếp theo:
-
-- [ ] 📲 **PWA & Mobile Viewport**: Tối ưu trải nghiệm màn hình dọc và hỗ trợ cài đặt ứng dụng web (Progressive Web App) trực tiếp trên điện thoại.
-- [ ] 🤖 **AI Financial Assistant**: Tích hợp AI phân tích thói quen tiêu dùng, đưa ra lời khuyên tiết kiệm và cảnh báo các khoản chi bất thường.
-- [ ] 🧾 **Quét Hóa Đơn Tự Động (OCR)**: Cho phép chụp ảnh hóa đơn/biên lai để tự động bóc tách số tiền và tạo giao dịch mà không cần nhập tay.
-- [ ] 🔄 **Giao Dịch Định Kỳ (Recurring Transactions)**: Tự động ghi nhận các khoản thu/chi cố định lặp lại theo chu kỳ (tiền nhà, tiền mạng, lương hàng tháng).
-- [ ] 👥 **Quản Lý Chi Tiêu Nhóm / Split Bill**: Hỗ trợ tạo ví chung cho gia đình hoặc nhóm bạn, tự động tính toán chia tiền chuyến đi.
-- [ ] 🔔 **Thông Báo Qua Telegram / Email**: Gửi thông báo nhắc nhở khi đến ngày thanh toán hóa đơn hoặc khi ngân sách chi tiêu đạt ngưỡng cảnh báo.
-
----
-
-## 📐 Cấu Trúc Thư Mục
-
-```
+```text
 Xet Chi Tieu/
 ├── backend/
 │   ├── prisma/
-│   │   ├── schema.prisma       # Prisma Schema (User, UserSettings, RefreshToken, Category, Transaction, Budget)
-│   │   └── seed.js             # Script nạp 15 danh mục mặc định
+│   │   ├── schema.prisma       # Model DB (User, UserSettings, RefreshToken, Category, Transaction, Budget)
+│   │   └── seed.js             # Script nạp 15 danh mục chuẩn
 │   ├── src/
-│   │   ├── controllers/        # Thin Controllers Layer
+│   │   ├── controllers/        # Express Controllers Layer
 │   │   ├── services/           # Business Logic Layer
 │   │   ├── routes/             # Express API Routers
 │   │   ├── middlewares/        # JWT Auth, Rate Limiter, Error Handler
-│   │   ├── validators/         # Zod Schemas
-│   │   └── server.ts           # Server Entry Point
+│   │   └── server.ts           # Backend Entry Point
 │   └── Dockerfile
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/         # Layout, Sidebar, ProtectedRoute
-│   │   ├── contexts/           # AuthContext (Auto apply UserSettings theme/currency)
-│   │   ├── pages/              # Dashboard, Transactions, Budgets, Settings, Login, Register
-│   │   ├── services/           # Centralized API Calls
-│   │   └── index.css           # Global Design System & Dark Mode
+│   │   ├── components/         # Sidebar, Layout, MonthYearPickerModal, AnimatedNumber
+│   │   ├── contexts/           # AuthContext, LanguageContext (i18n)
+│   │   ├── pages/              # Dashboard, Transactions, Budgets, ExchangeRate, Settings
+│   │   ├── services/           # Centralized API Service Calls
+│   │   └── i18n/               # Từ điển đa ngôn ngữ (VI / EN)
 │   └── Dockerfile
 │
-├── .github/workflows/ci.yml    # CI Pipeline
 ├── docker-compose.yml          # Container Orchestration
 └── README.md
 ```
 
 ---
 
-## 📄 License
+## 🚀 Hướng Dẫn Khởi Chạy (Getting Started)
 
-Dự án phát triển mã nguồn mở dưới giấy phép [MIT License](LICENSE).
+### Cách 1: Khởi chạy trực tiếp (Development Mode)
+
+#### 1. Khởi chạy Backend API
+```bash
+# Di chuyển vào thư mục backend
+cd backend
+
+# Tạo file cấu hình môi trường
+cp .env.example .env
+
+# Cài đặt dependencies
+npm install
+
+# Cập nhật CSDL & Nạp dữ liệu danh mục mẫu
+npx prisma db push
+npm run db:seed
+
+# Khởi chạy Backend server (chạy tại http://localhost:5000)
+npm run dev
+```
+
+#### 2. Khởi chạy Frontend Web App
+```bash
+# Di chuyển vào thư mục frontend (mở cửa sổ terminal mới)
+cd frontend
+
+# Cài đặt dependencies & khởi chạy
+npm install
+npm run dev
+```
+👉 Mở trình duyệt truy cập: **`http://localhost:5173`**
+
+---
+
+### Cách 2: Khởi chạy toàn bộ qua Docker Compose
+
+Yêu cầu đã cài đặt **Docker Desktop**.
+
+```bash
+# Tại thư mục gốc của dự án:
+docker compose up --build -d
+```
+Hệ thống sẽ tự động khởi chạy 3 dịch vụ container:
+- **Frontend App**: `http://localhost` (Port 80)
+- **Backend API**: `http://localhost:5000`
+- **PostgreSQL Database**: `localhost:5432`
+
+---
+
+## 📡 Tài Liệu API chính (API Reference)
+
+### Authentication (`/api/v1/auth`)
+| Method | Endpoint | Mô tả |
+| :--- | :--- | :--- |
+| `POST` | `/auth/register` | Đăng ký tài khoản mới |
+| `POST` | `/auth/login` | Đăng nhập & Nhận JWT Tokens trong Cookie |
+| `POST` | `/auth/logout` | Đăng xuất & Xóa Refresh Cookie |
+| `GET` | `/auth/me` | Lấy thông tin User & Settings hiện tại |
+
+### Transactions (`/api/v1/transactions`)
+| Method | Endpoint | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/transactions` | Danh sách giao dịch (có phân trang & bộ lọc) |
+| `POST` | `/transactions` | Tạo mới giao dịch thu/chi |
+| `PUT` | `/transactions/:id` | Cập nhật thông tin giao dịch |
+| `DELETE` | `/transactions/:id` | Xóa giao dịch |
+| `GET` | `/transactions/export/csv` | Trích xuất dữ liệu ra file CSV |
+
+### Stats & Budgets (`/api/v1/stats`, `/api/v1/budgets`)
+| Method | Endpoint | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/stats/summary` | Thống kê Tổng thu, Tổng chi, Số dư theo khoảng ngày |
+| `GET` | `/stats/by-category` | Phân tích chi tiêu theo từng danh mục |
+| `GET` | `/budgets` | Lấy danh sách ngân sách tháng |
+| `POST` | `/budgets` | Thiết lập ngân sách mới cho danh mục |
+
+---
+
+## 🔮 Kế Hoạch Phát Triển (Roadmap)
+
+- [x] 📱 **Apple-Style UI**: Nâng cấp bộ chọn thời gian Month/Year Picker với Framer Motion spring physics.
+- [x] 💱 **Live Currency Converter**: Tỷ giá hối đoái USD/VND thời gian thực.
+- [x] 🌐 **i18n Multilingual**: Hỗ trợ chuyển đổi song ngữ Tiếng Việt / Tiếng Anh.
+- [ ] 🤖 **AI Financial Advisor**: Tích hợp AI phân tích thói quen tiêu dùng và đưa ra gợi ý tiết kiệm.
+- [ ] 🧾 **Quét Hóa Đơn (OCR)**: Tự động bóc tách số tiền từ ảnh biên lai.
+- [ ] 🔄 **Giao Dịch Định Kỳ**: Tự động ghi nhận các khoản thu/chi cố định lặp lại theo tháng.
+
+---
+
+## 📄 Giấy Phép (License)
+
+Dự án được phát triển dưới giấy phép mã nguồn mở [MIT License](LICENSE).
