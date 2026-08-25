@@ -6,10 +6,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": false,
-    "noEmit": true,
-    "paths": {
-      "@/*": ["../backend/src/*"]
-    }
+    "noEmit": true
   },
-  "include": ["./index.ts", "../backend/src/**/*.ts"]
+  "include": ["./index.ts"]
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter expense-tracker-backend db:generate && pnpm --filter frontend build",
+  "buildCommand": "pnpm --filter expense-tracker-backend db:generate && pnpm --filter expense-tracker-backend build && pnpm --filter frontend build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
