@@ -41,7 +41,7 @@ const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Cho phép requests không có origin (Postman, cURL, v.v.)
+      // Cho phép requests không có origin (Postman, cURL, Same-origin v.v.)
       if (!origin) {
         return callback(null, true);
       }
@@ -49,7 +49,9 @@ app.use(
       if (
         allowedOrigins.includes(normalized) ||
         normalized.startsWith('http://localhost:') ||
-        normalized.startsWith('http://127.0.0.1:')
+        normalized.startsWith('http://127.0.0.1:') ||
+        normalized.endsWith('.vercel.app') ||
+        Boolean(process.env.VERCEL)
       ) {
         return callback(null, true);
       }
