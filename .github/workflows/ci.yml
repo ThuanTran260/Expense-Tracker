@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Backend — Lint & Test
+    name: Backend — Type-check, Test, Build
     runs-on: ubuntu-latest
 
     services:
@@ -28,43 +28,43 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/expense_tracker_test
-      JWT_ACCESS_SECRET: test-access-secret-32-chars-minimum
-      JWT_REFRESH_SECRET: test-refresh-secret-32-chars-minimum
+      JWT_ACCESS_SECRET: ${{ secrets.CI_JWT_ACCESS_SECRET || 'ci-only-access-secret-32-chars-minimum-length' }}
+      JWT_REFRESH_SECRET: ${{ secrets.CI_JWT_REFRESH_SECRET || 'ci-only-refresh-secret-32-chars-minimum' }}
       NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: backend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
         working-directory: backend
-        run: npx prisma generate
+        run: pnpm exec prisma generate
 
       - name: Run DB migrations
         working-directory: backend
-        run: npx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
 
       - name: Type check
-        working-directory: backend
-        run: npm run type-check
+        run: pnpm --filter expense-tracker-backend type-check
 
       - name: Run tests
-        working-directory: backend
-        run: npm test -- --coverage
+        run: pnpm --filter expense-tracker-backend test --coverage
 
       - name: Build
-        working-directory: backend
-        run: npm run build
+        run: pnpm --filter expense-tracker-backend build
 
   frontend:
     name: Frontend — Build
@@ -73,21 +73,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Type check
-        working-directory: frontend
-        run: npx tsc --noEmit
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        working-directory: frontend
-        run: npm run build
+        run: pnpm --filter frontend build

@@ -201,7 +201,7 @@ export default function TransactionsPage() {
             transition={{ duration: 0.2 }}
             className="glass-toast"
           >
-            <Sparkles size={18} style={{ color: '#6366f1' }} />
+            <Sparkles size={18} style={{ color: 'var(--color-warning)' }} />
             <span>{toastMessage}</span>
           </motion.div>
         )}

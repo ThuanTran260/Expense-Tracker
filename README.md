@@ -131,52 +131,80 @@ Xet Chi Tieu/
 
 ## 🚀 Hướng Dẫn Khởi Chạy (Getting Started)
 
-### Cách 1: Khởi chạy trực tiếp (Development Mode)
+### Yêu cầu
+- **Node.js 20+** và **pnpm** (`npm i -g pnpm` hoặc `corepack enable`)
+- PostgreSQL đang chạy (local, Docker, hoặc dùng Supabase — xem bên dưới)
 
-#### 1. Khởi chạy Backend API
+### Cách 1: Khởi chạy trực tiếp (Development Mode) — 1 lệnh duy nhất
+
 ```bash
-# Di chuyển vào thư mục backend
-cd backend
+# Tại thư mục gốc của dự án:
+pnpm install                 # cài dependency toàn workspace
 
-# Tạo file cấu hình môi trường
-cp .env.example .env
+# Cấu hình backend môi trường
+cd backend && cp .env.example .env   # điền DATABASE_URL + JWT secrets (tối thiểu 32 ký tự)
+cd ..
 
-# Cài đặt dependencies
-npm install
+# Đồng bộ database & nạp danh mục mẫu
+pnpm db:push
+pnpm db:seed
 
-# Cập nhật CSDL & Nạp dữ liệu danh mục mẫu
-npx prisma db push
-npm run db:seed
-
-# Khởi chạy Backend server (chạy tại http://localhost:5000)
-npm run dev
+# Chạy song song Backend (:5000) + Frontend (:5173)
+pnpm dev
 ```
 
-#### 2. Khởi chạy Frontend Web App
-```bash
-# Di chuyển vào thư mục frontend (mở cửa sổ terminal mới)
-cd frontend
+👉 Mở trình duyệt truy cập: **`http://localhost:5173`** (Vite đã proxy `/api` → `http://localhost:5000`, không cần cấu hình thêm).
 
-# Cài đặt dependencies & khởi chạy
-npm install
-npm run dev
+Tạo JWT secret mạnh nhanh chóng:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
-👉 Mở trình duyệt truy cập: **`http://localhost:5173`**
+
+> 💡 **Dùng Supabase làm database**: thay `DATABASE_URL` trong `backend/.env` bằng connection string pooler của Supabase (Project Settings → Database → Connection string → URI, cổng `6543`). Chưa deploy vẫn chạy bình thường ở local.
 
 ---
 
 ### Cách 2: Khởi chạy toàn bộ qua Docker Compose
 
-Yêu cầu đã cài đặt **Docker Desktop**.
+Yêu cầu đã cài đặt **Docker Desktop**. JWT secrets là **bắt buộc** (không có giá trị mặc định):
 
 ```bash
-# Tại thư mục gốc của dự án:
+# Tại thư mục gốc — tạo file .env chứa:
+JWT_ACCESS_SECRET=<chuỗi ngẫu nhiên ≥32 ký tự>
+JWT_REFRESH_SECRET=<chuỗi ngẫu nhiên ≥32 ký tự>
+
 docker compose up --build -d
 ```
+
 Hệ thống sẽ tự động khởi chạy 3 dịch vụ container:
 - **Frontend App**: `http://localhost` (Port 80)
 - **Backend API**: `http://localhost:5000`
 - **PostgreSQL Database**: `localhost:5432`
+
+---
+
+### Cách 3: Deploy lên Vercel (Supabase + Vercel Serverless) — Kịch bản B
+
+Repo đã cấu hình sẵn deploy all-in-one: `api/index.ts` (Express → Vercel Function) + `vercel.json` (rewrite `/api/*` → function, giữ same-origin cho cookie `SameSite: strict`).
+
+**Các bước:**
+
+1. Import repo vào Vercel (Root Directory = root của repo):
+   - Build Command: `pnpm --filter frontend build`
+   - Output Directory: `frontend/dist`
+   - Install Command: `pnpm install`
+2. Thêm **4 biến môi trường** (Settings → Environment Variables, tick Production + Preview):
+
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | Supabase connection **pooler** cổng `6543` + `?pgbouncer=true&connection_limit=1` |
+   | `DIRECT_URL` | Supabase **direct** cổng `5432` |
+   | `JWT_ACCESS_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` — cặp riêng cho production |
+   | `JWT_REFRESH_SECRET` | Như trên, giá trị khác |
+
+3. Deploy → kiểm tra `https://<app>.vercel.app/health` trả `{"status":"ok"}`.
+
+> ⚠️ Nếu log deploy báo lỗi Prisma engine (không tìm thấy `libquery_engine-*.so`), đổi `binaryTargets` trong `backend/prisma/schema.prisma` sang `["native", "rhel-openssl-1.0.x"]` rồi deploy lại.
 
 ---
 

@@ -34,12 +34,10 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="sidebar-logo">
         <h1>
-          <Wallet size={20} color="#6366f1" />
+          <Wallet size={20} />
           {t('nav.appName')}
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
-          {t('nav.appSubtitle')}
-        </p>
+        <p className="sidebar-subtitle">{t('nav.appSubtitle')}</p>
       </div>
 
       {/* Navigation */}
@@ -58,27 +56,16 @@ export default function Sidebar() {
 
       {/* User info + Logout */}
       <div className="sidebar-footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0,
-          }}>
+        <div className="sidebar-user">
+          <div className="sidebar-avatar">
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           <div style={{ overflow: 'hidden' }}>
-            <p style={{ margin: 0, color: 'white', fontSize: '0.85rem', fontWeight: 600,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.name}
-            </p>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.email}
-            </p>
+            <p className="sidebar-user-name">{user?.name}</p>
+            <p className="sidebar-user-email">{user?.email}</p>
           </div>
         </div>
-        <button className="nav-item" onClick={handleLogout} style={{ color: 'rgba(255,255,255,0.6)' }}>
+        <button className="nav-item" onClick={handleLogout}>
           <LogOut size={16} />
           {t('nav.logout')}
         </button>

@@ -224,19 +224,19 @@ export default function MonthYearPickerModal({
                       border: isSelected
                         ? '1.5px solid var(--color-primary)'
                         : isCurrentMonth
-                        ? '1.5px solid rgba(99, 102, 241, 0.4)'
+                        ? '1.5px solid var(--color-ring)'
                         : '1px solid var(--color-border)',
                       background: isSelected
-                        ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+                        ? 'var(--color-primary)'
                         : isCurrentMonth
-                        ? 'rgba(99, 102, 241, 0.1)'
-                        : 'rgba(255, 255, 255, 0.02)',
-                      color: isSelected ? '#ffffff' : 'var(--color-text-primary)',
+                        ? 'var(--color-primary-light)'
+                        : 'transparent',
+                      color: isSelected ? 'var(--color-primary-contrast)' : 'var(--color-text-primary)',
                       fontWeight: isSelected || isCurrentMonth ? 700 : 500,
                       fontSize: '0.85rem',
                       cursor: 'pointer',
-                      boxShadow: isSelected ? '0 4px 14px rgba(99, 102, 241, 0.35)' : 'none',
-                      transition: 'background 0.2s ease, border 0.2s ease',
+                      boxShadow: 'none',
+                      transition: 'background 0.2s ease, border 0.2s ease, color 0.2s ease',
                     }}
                   >
                     {monthName}

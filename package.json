@@ -5,7 +5,12 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
-    "security:check": "echo 'Run: gitleaks detect --source . -v'"
+    "security:check": "echo 'Run: gitleaks detect --source . -v'",
+    "dev": "pnpm --parallel --filter expense-tracker-backend --filter frontend dev",
+    "dev:api": "pnpm --filter expense-tracker-backend dev",
+    "dev:web": "pnpm --filter frontend dev",
+    "db:push": "pnpm --filter expense-tracker-backend db:push",
+    "db:seed": "pnpm --filter expense-tracker-backend db:seed"
   },
   "keywords": [],
   "author": "",

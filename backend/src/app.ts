@@ -13,6 +13,10 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 const app = express();
 
+// Đứng sau reverse proxy (Vercel / Render / Nginx) → tin hop đầu tiên
+// để express-rate-limit nhìn thấy IP thật của client thay vì IP của proxy.
+app.set('trust proxy', 1);
+
 // ─────────────────────────────────────────────
 // SECURITY MIDDLEWARES
 // ─────────────────────────────────────────────

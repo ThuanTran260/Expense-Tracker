@@ -47,11 +47,12 @@ export default function RegisterPage() {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{
             width: 56, height: 56, borderRadius: 16,
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'var(--color-primary)',
+            color: 'var(--color-primary-contrast)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 1rem',
           }}>
-            <Wallet size={28} color="white" />
+            <Wallet size={28} color="currentColor" />
           </div>
           <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>Tạo tài khoản</h1>
           <p style={{ margin: '0.5rem 0 0', color: 'var(--color-text-secondary)' }}>

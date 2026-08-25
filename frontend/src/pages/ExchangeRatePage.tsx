@@ -64,7 +64,7 @@ export default function ExchangeRatePage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Coins color="#6366f1" size={26} /> {t('exchange.title')}
+            <Coins color="currentColor" size={26} /> {t('exchange.title')}
           </h1>
           <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
             {t('exchange.subtitle')}
@@ -84,8 +84,9 @@ export default function ExchangeRatePage() {
 
       {/* Hero Live Rate Banner */}
       <div className="card mb-6" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 100%)',
-        border: '1px solid rgba(99,102,241,0.3)',
+        background: 'var(--color-primary)',
+        border: '1px solid var(--color-primary)',
+        color: 'var(--color-primary-contrast)',
       }}>
         <div className="card-body" style={{ padding: '1.5rem 2rem' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -99,14 +100,14 @@ export default function ExchangeRatePage() {
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} className="animate-pulse" />
                   {t('exchange.liveRate')}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                <span style={{ fontSize: '0.8rem', color: 'color-mix(in srgb, var(--color-primary-contrast) 62%, transparent)' }}>
                   {t('exchange.lastUpdated')} {lastUpdated}
                 </span>
               </div>
-              <h2 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
-                1 USD = <span style={{ color: 'var(--color-primary)' }}>{usdToVnd.toLocaleString('vi-VN')}</span> VND
+              <h2 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--color-primary-contrast)' }}>
+                1 USD = <span>{usdToVnd.toLocaleString('vi-VN')}</span> VND
               </h2>
-              <p style={{ margin: '0.35rem 0 0', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.875rem', color: 'color-mix(in srgb, var(--color-primary-contrast) 65%, transparent)' }}>
                 1 VND = {(1 / usdToVnd).toFixed(6)} USD
               </p>
             </div>
@@ -114,13 +115,14 @@ export default function ExchangeRatePage() {
             <div style={{
               display: 'flex', alignItems: 'center', gap: '1rem',
               padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)',
-              background: 'rgba(15, 23, 42, 0.4)', border: '1px solid var(--color-border)',
+              background: 'color-mix(in srgb, var(--color-primary-contrast) 8%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--color-primary-contrast) 18%, transparent)',
             }}>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: '1.5rem' }}>🇺🇸</span>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', fontWeight: 700 }}>USD</p>
               </div>
-              <ArrowLeftRight size={20} style={{ color: 'var(--color-primary)' }} />
+              <ArrowLeftRight size={20} />
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: '1.5rem' }}>🇻🇳</span>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', fontWeight: 700 }}>VND</p>
@@ -136,7 +138,7 @@ export default function ExchangeRatePage() {
         <div className="card">
           <div className="card-body">
             <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Zap size={18} style={{ color: '#f59e0b' }} /> {t('exchange.calculatorTitle')}
+              <Zap size={18} style={{ color: 'var(--color-warning)' }} /> {t('exchange.calculatorTitle')}
             </h3>
 
             {/* Input From */}
@@ -202,7 +204,7 @@ export default function ExchangeRatePage() {
         <div className="card">
           <div className="card-body">
             <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={18} style={{ color: '#6366f1' }} /> {t('exchange.financialImpactTitle')}
+              <Sparkles size={18} style={{ color: 'var(--color-text-secondary)' }} /> {t('exchange.financialImpactTitle')}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -247,8 +249,8 @@ export default function ExchangeRatePage() {
               {/* Balance */}
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', background: 'rgba(99, 102, 241, 0.06)',
-                border: '1px solid rgba(99, 102, 241, 0.2)',
+                padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', background: 'var(--color-primary-light)',
+                border: '1px solid var(--color-border)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <Wallet size={20} style={{ color: 'var(--color-primary)' }} />

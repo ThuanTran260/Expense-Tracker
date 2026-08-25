@@ -13,7 +13,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import AnimatedNumber from '../components/Dashboard/AnimatedNumber';
 import MonthYearPickerModal from '../components/Dashboard/MonthYearPickerModal';
 
-const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
+const CHART_COLORS = ['#52525b', '#059669', '#d97706', '#dc2626', '#2563eb', '#0d9488', '#a1a1aa'];
 
 export default function DashboardPage() {
   const { user } = useAuth();

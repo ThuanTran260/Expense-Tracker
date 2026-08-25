@@ -26,10 +26,11 @@
    - Tỷ giá USD/VND: Lấy tự động qua Open Exchange API (`open.er-api.com`), có fallback cố định nếu mất mạng.
 2. **Xử lý Ngày Tháng & Múi Giờ**:
    - Truy vấn thống kê theo tháng phải tính chuẩn mốc đầu tháng `00:00:00.000` đến cuối tháng `23:59:59.999` theo múi giờ local của người dùng trước khi chuyển sang ISO UTC gửi lên Backend.
-3. **Hiệu ứng Giao diện Apple-Style (HIG Standards)**:
-   - Mọi Modal chọn ngày/tháng hoặc Form popover phải dùng `createPortal(..., document.body)` để lớp phủ Blur (`backdrop-filter: blur(18px)`) phủ kín 100% màn hình kể cả Sidebar.
-   - Khi mở Modal, bắt buộc khóa cuộn trang (`document.body.style.overflow = 'hidden'`) và chặn sự kiện cuộn chuột (`e.stopPropagation()`).
-   - Giữ hiệu ứng chuyển đổi số cuộn nảy (`AnimatedNumber.tsx`) mượt mà trong 700ms với Framer Motion `useSpring`.
+3. **Hướng UI Phenomenon-clean (thay cho Apple HIG — đồng bộ từ 2026-08-26)**:
+   - Định hướng hiện tại: **paper/ink minimalism** (nền giấy `#fafaf8`, mực `#141414`, hairline border, button pill) — chi tiết token xem `AGENTS.md` root §"UI direction". Toàn bộ design tokens nằm trong `frontend/src/index.css`.
+   - Vẫn giữ nguyên quy tắc Modal/popover: bắt buộc dùng `createPortal(..., document.body)` để lớp phủ blur phủ kín 100% màn hình kể cả Sidebar; khi mở Modal khóa cuộn trang (`document.body.style.overflow = 'hidden'`) và chặn sự kiện cuộn chuột.
+   - Giữ hiệu ứng chuyển đổi số cuộn (`AnimatedNumber.tsx`) mượt mà với Framer Motion; motion tổng thể calm `cubic-bezier(0.16,1,0.3,1)`, không bounce/glow.
+   - Cấm tái nhập palette indigo cũ (`#6366f1`, `#8b5cf6`); màu action chính là ink qua `--color-primary`, text trên nền đó dùng `--color-primary-contrast`.
 
 ---
 
