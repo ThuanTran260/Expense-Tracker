@@ -4,6 +4,8 @@
   "description": "Expense Tracker — Personal Finance Management App",
   "private": true,
   "scripts": {
+    "build": "pnpm --filter expense-tracker-backend db:generate && pnpm --filter frontend build",
+    "vercel-build": "pnpm --filter expense-tracker-backend db:generate && pnpm --filter frontend build",
     "prepare": "husky",
     "security:check": "echo 'Run: gitleaks detect --source . -v'",
     "dev": "pnpm --parallel --filter expense-tracker-backend --filter frontend dev",

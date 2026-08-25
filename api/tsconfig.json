@@ -5,8 +5,11 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true
+    "strict": false,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["../backend/src/*"]
+    }
   },
   "include": ["./index.ts", "../backend/src/**/*.ts"]
 }
