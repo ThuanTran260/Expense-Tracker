@@ -54,3 +54,10 @@ Thumbs.db
 password*
 *.txt
 secret*
+
+# ──────────────────────────────────────────────────────────────
+# Agent artifacts — chỉ track rules + skills, bỏ rác từ dự án cũ
+# ──────────────────────────────────────────────────────────────
+.agents/*
+!.agents/AGENTS.md
+!.agents/skills/
