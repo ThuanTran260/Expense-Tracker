@@ -37,17 +37,6 @@ async function createTransaction(token: string, categoryId: string, note?: strin
   return res.body.transaction as { id: string };
 }
 
-async function getFirstSystemCategoryId(token: string): Promise<string> {
-  const res = await request(app)
-    .get('/api/v1/categories')
-    .set('Authorization', `Bearer ${token}`);
-  expect(res.status).toBe(200);
-  const list = res.body.data as Array<{ id: string; userId: string | null }>;
-  const system = list.find((c) => c.userId === null);
-  expect(system).toBeDefined();
-  return system!.id;
-}
-
 describe('SECURITY: IDOR / authorization matrix', () => {
   let tokenA: string;
   let tokenB: string;
@@ -55,16 +44,21 @@ describe('SECURITY: IDOR / authorization matrix', () => {
   let txnIdA: string;
   let budgetIdB: string;
   let categoryIdB: string;
+  let systemCategoryId: string;
   const cleanupUserIds: string[] = [];
 
   beforeAll(async () => {
+    // Hermetic: tự tạo category hệ thống (CI test DB không có seed)
+    const sysCat = await prisma.category.create({
+      data: { name: `sec-sys-${Date.now()}`, type: 'EXPENSE', userId: null },
+    });
+    systemCategoryId = sysCat.id;
+
     const a = await createUser('Alice');
     const b = await createUser('Bob');
     tokenA = a.accessToken;
     tokenB = b.accessToken;
     cleanupUserIds.push(a.user.id, b.user.id);
-
-    const systemCategoryId = await getFirstSystemCategoryId(tokenB);
 
     // B tạo data của B
     txnIdB = (await createTransaction(tokenB, systemCategoryId, 'data-cua-B')).id;
@@ -88,12 +82,13 @@ describe('SECURITY: IDOR / authorization matrix', () => {
     budgetIdB = budgetRes.body.budget.id;
 
     // A tạo data của A (kiểm tra không over-block)
-    const systemCategoryIdA = await getFirstSystemCategoryId(tokenA);
-    txnIdA = (await createTransaction(tokenA, systemCategoryIdA, 'data-cua-A')).id;
+    txnIdA = (await createTransaction(tokenA, systemCategoryId, 'data-cua-A')).id;
   });
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: cleanupUserIds } } });
+    // Category hệ thống test — xóa sau khi users đã cascade transactions
+    await prisma.category.deleteMany({ where: { id: systemCategoryId } });
     await prisma.$disconnect();
   });
 

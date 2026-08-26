@@ -18,13 +18,11 @@ jest.setTimeout(30000);
 async function createUserWithCategory() {
   const email = `fuzz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${EMAIL_SUFFIX}`;
   const { user, accessToken } = await authService.register('Fuzzer', email, 'SecurePass123!');
-  const catRes = await request(app)
-    .get('/api/v1/categories')
-    .set('Authorization', `Bearer ${accessToken}`);
-  const categoryId = (catRes.body.data as Array<{ id: string; userId: string | null }>).find(
-    (c) => c.userId === null
-  )!.id;
-  return { user, accessToken, categoryId };
+  // Hermetic: tự tạo category hệ thống (CI test DB không có seed)
+  const sysCat = await prisma.category.create({
+    data: { name: `fuzz-sys-${Date.now()}`, type: 'EXPENSE', userId: null },
+  });
+  return { user, accessToken, categoryId: sysCat.id, sysCategoryId: sysCat.id };
 }
 
 function txnBody(overrides: Record<string, unknown>, categoryId: string) {
@@ -41,16 +39,19 @@ describe('SECURITY: input fuzzing', () => {
   let token: string;
   let categoryId: string;
   let cleanupUserId: string;
+  let sysCategoryId: string;
 
   beforeAll(async () => {
     const ctx = await createUserWithCategory();
     token = ctx.accessToken;
     categoryId = ctx.categoryId;
+    sysCategoryId = ctx.sysCategoryId;
     cleanupUserId = ctx.user.id;
   });
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: cleanupUserId } });
+    await prisma.category.deleteMany({ where: { id: sysCategoryId } });
     await prisma.$disconnect();
   });
 
