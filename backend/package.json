@@ -52,7 +52,7 @@
     "prisma"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "@prisma/client": "^5.22.0",
