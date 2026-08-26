@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   backend:
@@ -29,8 +30,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/expense_tracker_test
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/expense_tracker_test
-      JWT_ACCESS_SECRET: ${{ secrets.CI_JWT_ACCESS_SECRET || 'ci-only-access-secret-32-chars-minimum-length' }}
-      JWT_REFRESH_SECRET: ${{ secrets.CI_JWT_REFRESH_SECRET || 'ci-only-refresh-secret-32-chars-minimum' }}
+      JWT_ACCESS_SECRET: ci-only-access-secret-32-chars-minimum-length
+      JWT_REFRESH_SECRET: ci-only-refresh-secret-32-chars-minimum
       NODE_ENV: test
 
     steps:
@@ -39,7 +40,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -82,7 +83,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
