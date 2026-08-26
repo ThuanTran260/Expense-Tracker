@@ -61,7 +61,7 @@ export default function TransactionsPage() {
   const categories = categoriesData?.data ?? [];
 
   const { register, handleSubmit, reset, setValue, watch, control, formState: { errors } } =
-    useForm<TxForm>({ resolver: zodResolver(txSchema), defaultValues: { type: 'EXPENSE', date: new Date().toISOString().split('T')[0] } });
+    useForm<TxForm>({ resolver: zodResolver(txSchema), defaultValues: { type: 'EXPENSE', categoryId: '', date: new Date().toISOString().split('T')[0] } });
 
   const currentType = watch('type');
   const currentCategory = watch('categoryId');

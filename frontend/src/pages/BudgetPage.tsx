@@ -50,7 +50,7 @@ export default function BudgetPage() {
   const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } =
     useForm<BudgetForm>({
       resolver: zodResolver(budgetSchema),
-      defaultValues: { month: selectedMonth, year: selectedYear },
+      defaultValues: { month: selectedMonth, year: selectedYear, categoryId: '' },
     });
 
   const closeModal = () => {
