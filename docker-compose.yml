@@ -6,6 +6,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-expense_tracker}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -28,8 +30,8 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-expense_tracker}
       # Bắt buộc: compose sẽ từ chối start nếu thiếu — không còn secret mặc định yếu
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required (min 32 chars). Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required (min 32 chars). Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"}
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required (min 32 chars)}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required (min 32 chars)}"
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       CORS_ORIGINS: ${FRONTEND_URL:-http://localhost:80}
