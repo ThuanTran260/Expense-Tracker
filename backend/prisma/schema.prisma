@@ -55,18 +55,22 @@ model UserSettings {
 }
 
 // ─────────────────────────────────────────────
-// REFRESH TOKEN — lưu refresh token để hỗ trợ logout
-// ─────────────────────────────────────────────
+// REFRESH TOKEN — lưu refresh token (dạng hash) để hỗ trợ logout + reuse detection
+// familyId: các token cùng phiên đăng nhập (mỗi login = 1 family mới)
+// rotatedAt: token đã bị rotate → dùng lại = reuse attack → thu hồi cả family
 model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String    @id @default(cuid())
+  token     String    @unique
   userId    String
   expiresAt DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  familyId  String
+  rotatedAt DateTime?
 
   // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([familyId])
   @@map("refresh_tokens")
 }
 

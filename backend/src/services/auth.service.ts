@@ -6,6 +6,8 @@ import { AppError } from '../utils/errors';
 import { AuthPayload } from '../middlewares/auth';
 
 const BCRYPT_ROUNDS = 12;
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const ROTATED_RETENTION_MS = 24 * 60 * 60 * 1000; // giữ rotated rows 24h làm reuse evidence
 
 /**
  * Refresh token lưu DB ở dạng hash SHA-256 (không plain) — nếu DB bị lộ,
@@ -15,11 +17,29 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-/** Dọn token hết hạn — best-effort, không được làm hỏng auth flow */
+/**
+ * Refresh token là OPAQUE (random 48 bytes base64url) — không phải JWT:
+ * - Không encode userId/email vào token
+ * - DB là nguồn chân lý duy nhất; bỏ jwt.verify cho refresh flow
+ */
+function generateOpaqueRefreshToken(): string {
+  return crypto.randomBytes(48).toString('base64url');
+}
+
+/**
+ * Dọn token hết hạn + rotated rows quá 24h — best-effort, không làm hỏng auth flow.
+ * LƯU Ý serverless: caller phải await (fire-and-forget sẽ bị freeze giữa chừng).
+ */
 async function purgeExpiredTokens(): Promise<void> {
   try {
+    const now = Date.now();
     await prisma.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
+      where: {
+        OR: [
+          { expiresAt: { lt: new Date(now) } },
+          { rotatedAt: { lt: new Date(now - ROTATED_RETENTION_MS) } },
+        ],
+      },
     });
   } catch {
     // bỏ qua — dọn dẹp thất bại không chặn đăng nhập/refresh
@@ -38,12 +58,6 @@ function getEnv(key: string): string {
 function generateAccessToken(payload: AuthPayload): string {
   return jwt.sign(payload, getEnv('JWT_ACCESS_SECRET'), {
     expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN as any) || '15m',
-  });
-}
-
-function generateRefreshToken(payload: AuthPayload): string {
-  return jwt.sign(payload, getEnv('JWT_REFRESH_SECRET'), {
-    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as any) || '7d',
   });
 }
 
@@ -94,15 +108,20 @@ export const authService = {
 
     const payload: AuthPayload = { userId: user.id, email: user.email };
     const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
+    const refreshToken = generateOpaqueRefreshToken();
+    const familyId = crypto.randomUUID(); // mỗi login = 1 family mới (cách ly theo thiết bị)
 
-    // Lưu refresh token vào DB (hash) để hỗ trợ logout + reuse detection
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // Lưu refresh token vào DB (hash) — family phục vụ reuse detection + logout sạch
     await prisma.refreshToken.create({
-      data: { token: hashToken(refreshToken), userId: user.id, expiresAt },
+      data: {
+        token: hashToken(refreshToken),
+        userId: user.id,
+        familyId,
+        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+      },
     });
 
-    void purgeExpiredTokens();
+    await purgeExpiredTokens();
 
     return { user, accessToken, refreshToken };
   },
@@ -134,15 +153,20 @@ export const authService = {
 
     const payload: AuthPayload = { userId: user.id, email: user.email };
     const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
+    const refreshToken = generateOpaqueRefreshToken();
+    const familyId = crypto.randomUUID();
 
     // Lưu refresh token (hash)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await prisma.refreshToken.create({
-      data: { token: hashToken(refreshToken), userId: user.id, expiresAt },
+      data: {
+        token: hashToken(refreshToken),
+        userId: user.id,
+        familyId,
+        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+      },
     });
 
-    void purgeExpiredTokens();
+    await purgeExpiredTokens();
 
     // Không trả passwordHash trong response
     const { passwordHash: _, ...safeUser } = user;
@@ -150,10 +174,11 @@ export const authService = {
   },
 
   /**
-   * Refresh: đổi refreshToken (từ cookie) lấy accessToken mới + ROTATE refresh token.
-   * - Token cũ bị xóa khỏi DB ngay (one-time use) → token bị đánh cắp chỉ dùng được 1 lần.
-   * - Lưu ý edge case: 2 tab refresh cùng lúc → tab thua race nhận 401 và phải login lại
-   *   (hiếm, tự hồi phục; frontend đã có hàng đợi refresh trong cùng 1 tab).
+   * Refresh: đổi refreshToken (opaque, từ cookie) lấy accessToken mới + ROTATE.
+   * - Rotate: row cũ đánh dấu rotatedAt (giữ làm reuse evidence), cấp token mới cùng family.
+   * - REUSE DETECTION: token đã rotated bị dùng lại → coi như đánh cắp → thu hồi TOÀN BỘ family.
+   * - Edge case multi-tab: frontend serialize refresh bằng Web Locks API; nếu 2 request
+   *   vẫn lọt qua thì tab thua nhận 401 và phải login lại (hiếm, tự hồi phục).
    */
   async refresh(refreshToken: string) {
     if (!refreshToken) {
@@ -168,39 +193,57 @@ export const authService = {
       throw AppError.unauthorized('Refresh token không hợp lệ hoặc đã hết hạn');
     }
 
-    let payload: AuthPayload;
-    try {
-      payload = jwt.verify(refreshToken, getEnv('JWT_REFRESH_SECRET')) as AuthPayload;
-    } catch {
+    if (stored.rotatedAt) {
+      // Token one-time use bị chơi lại → giả định bị đánh cắp → kill cả family
+      await prisma.refreshToken.deleteMany({ where: { familyId: stored.familyId } });
+      throw AppError.unauthorized('Phiên đăng nhập đã bị thu hồi do phát hiện bất thường');
+    }
+
+    // Opaque token: payload lấy từ DB, không decode được từ token
+    const user = await prisma.user.findUnique({
+      where: { id: stored.userId },
+      select: { id: true, email: true },
+    });
+    if (!user) {
+      await prisma.refreshToken.deleteMany({ where: { familyId: stored.familyId } });
       throw AppError.unauthorized('Refresh token không hợp lệ');
     }
 
-    const accessToken = generateAccessToken(payload);
-    const newRefreshToken = generateRefreshToken(payload);
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
+    const newRefreshToken = generateOpaqueRefreshToken();
 
-    // ROTATION: vô hiệu token cũ, cấp token mới (lưu hash)
+    // ROTATION: đánh dấu token cũ + cấp token mới cùng family (lưu hash)
     await prisma.$transaction([
-      prisma.refreshToken.delete({ where: { token: stored.token } }),
+      prisma.refreshToken.update({
+        where: { token: stored.token },
+        data: { rotatedAt: new Date() },
+      }),
       prisma.refreshToken.create({
         data: {
           token: hashToken(newRefreshToken),
           userId: stored.userId,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          familyId: stored.familyId,
+          expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
         },
       }),
     ]);
 
-    void purgeExpiredTokens();
+    await purgeExpiredTokens();
 
     return { accessToken, refreshToken: newRefreshToken };
   },
 
   /**
-   * Logout — xóa refreshToken khỏi DB (revoke, so khớp theo hash).
+   * Logout — thu hồi cả family của phiên này (các token đã rotated trong chuỗi cũng sạch).
+   * Không đụng family khác → đăng xuất 1 thiết bị không ảnh hưởng thiết bị khác.
    */
   async logout(refreshToken: string | undefined) {
-    if (refreshToken) {
-      await prisma.refreshToken.deleteMany({ where: { token: hashToken(refreshToken) } });
+    if (!refreshToken) return;
+    const stored = await prisma.refreshToken.findUnique({
+      where: { token: hashToken(refreshToken) },
+    });
+    if (stored) {
+      await prisma.refreshToken.deleteMany({ where: { familyId: stored.familyId } });
     }
   },
 
