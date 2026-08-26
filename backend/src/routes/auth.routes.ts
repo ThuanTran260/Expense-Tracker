@@ -19,10 +19,11 @@ const authLimiter = rateLimit({
   },
 });
 
-// Nới hơn authLimiter vì refresh diễn ra định kỳ theo phiên (multi-tab)
+// Nới hơn authLimiter vì refresh diễn ra định kỳ theo phiên (multi-tab).
+// Cho phép override qua env để load test local không bị chặn oan.
 const refreshLimiter = rateLimit({
-  windowMs: 60_000,
-  max: 30,
+  windowMs: Number(process.env.REFRESH_RATE_LIMIT_WINDOW_MS) || 60_000,
+  max: Number(process.env.REFRESH_RATE_LIMIT_MAX) || 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
