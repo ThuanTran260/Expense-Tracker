@@ -19,6 +19,8 @@
     <a href="#-công-nghệ-sử-dụng">Công Nghệ</a> •
     <a href="#-hướng-dẫn-cài-đặt">Cài Đặt</a> •
     <a href="#-tài-liệu-api">API Docs</a> •
+    <a href="#-kiểm-thử-hiệu-năng-k6--bảo-mật--kết-quả-thực-tế">k6 Testing</a> •
+    <a href="#-portfolio-highlight--casual">Portfolio</a> •
     <a href="#-roadmap">Roadmap</a>
   </p>
 
@@ -234,6 +236,34 @@ Repo đã cấu hình sẵn deploy all-in-one: `api/index.ts` (Express → Verce
 | `GET` | `/stats/by-category` | Phân tích chi tiêu theo từng danh mục |
 | `GET` | `/budgets` | Lấy danh sách ngân sách tháng |
 | `POST` | `/budgets` | Thiết lập ngân sách mới cho danh mục |
+
+---
+
+## 🧪 Kiểm Thử Hiệu Năng (k6) & Bảo Mật — Kết Quả Thực Tế
+
+> Verified local: Docker Postgres + `pnpm dev:api` + k6 v0.5x (26/08/2026). Chi tiết runbook: [`load/README.md`](load/README.md)
+
+| Kịch bản k6 | VU / Thời gian | Ngưỡng | Kết quả | Kết luận |
+|---|---|---|---|---|
+| **Mixed** (80% đọc / 20% ghi) | ramp 0→50→200, 4m30s — 88.231 req (326 req/s) | p95<800ms, lỗi<1% | **p95 401ms ✓**, lỗi **0.00% ✓**, checks 100% (46.246) | Tải thực tế dư sức — avg 119ms, max 895ms |
+| **Spike** (burst) | 500 VU / 50s — 13.020 req (260 req/s) | p95<1500ms, lỗi<5% | **p95 2.04s ✗**, lỗi **0.00% ✓** | Chậm lại có kiểm soát, **không sập** (0% 5xx). 4.589 iter bị k6 drop do thiếu VU (`Insufficient VUs`) — trần local đơn instance ~260 req/s; production Vercel Fluid autoscale sẽ cao hơn |
+| **Refresh Storm** | 200 VU × 2m — 48.011 req | p95<1000ms, lỗi<2% (chỉ tính 5xx) | **p95 5.11ms ✓** (request được phép), **99.45% 429** | 429 là **đúng thiết kế**: limiter 30/phút/IP chặn 24k req/phút. 60 request được phép đều nhanh (p95 244ms), **0% 500** — không contention DB |
+
+**Đọc nhanh:** Mixed và Refresh Storm **PASS** — hệ thống chịu 200 concurrent dư sức; Spike vượt ngưỡng p95 nhưng 0% lỗi = degrade gracefully, không phải bug. Toàn bộ k6 bắn vào **local** (`localhost:5000`), không đụng production/Supabase.
+
+**Bảo mật tự động (30 tests, CI):** IDOR matrix (9), auth-flow abuse — reuse detection / family revoke (6), input fuzz — SQLi/XSS/payload 1MB (7), headers & exposure — CORS same-origin + `passwordHash` leak check (5) + `pnpm audit` 0 CVE.
+
+---
+
+## 💼 Portfolio Highlight — Casual
+
+> *Mình làm Xét Chi Tiêu như một phòng lab tài chính cá nhân: vừa phải đẹp để dùng hàng ngày, vừa phải "cứng" như sản phẩm thật.*
+
+**Vì sao build kiểu này?** Muốn một app tiền bạc mà mình dám đưa cho người thân dùng — nên auth phải rotate + hash + reuse detection, tiền VND phải nguyên không thập phân, mọi query phải scope theo `userId`, và deploy phải cùng origin để cookie `SameSite: strict` không vỡ.
+
+**Khoảnh khắc k6 đáng nhớ:** Lần đầu bắn Spike 500 VU, terminal đỏ `p(95)=2.04s ✗` — tưởng bug, hóa ra là máy local đơn instance đang cố gắng hết sức mà vẫn 0% lỗi. Còn Refresh Storm 99% fail thì lại là... thành công: limiter 30/phút đang làm đúng việc chặn brute-force. Những con số này giờ nằm trong CI, mỗi PR phá invariant là đỏ ngay.
+
+**Stack mình mang đi phỏng vấn:** React 19 + Vite + Prisma + Supabase + Vercel (Fluid) + Docker + k6. Một lệnh `pnpm dev` chạy cả 2 service, một file `vercel.json` cân cả CSP lẫn rewrite.
 
 ---
 
