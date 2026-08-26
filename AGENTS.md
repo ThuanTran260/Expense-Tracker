@@ -53,6 +53,8 @@ Root `package.json` đã có `dev` / `dev:api` / `dev:web` / `db:push` / `db:see
 - Đích deploy dự kiến của user: **Supabase (DB) + Vercel — Kịch bản B đã implement (2026-08-26)**: `api/index.ts` export Express app làm Vercel Function + `vercel.json` rewrite `/api/*` → function (same-origin, cookie strict OK) + SPA fallback. Vercel settings: build `pnpm --filter frontend build`, output `frontend/dist`, 4 env vars (`DATABASE_URL` pooler 6543, `DIRECT_URL` direct 5432, 2 JWT secrets riêng cho prod).
 - Prisma `binaryTargets = ["native", "rhel-openssl-3.0.x"]` cho runtime Amazon Linux của Vercel; nếu deploy báo thiếu engine thì đổi sang `rhel-openssl-1.0.x`.
 - `backend/src/app.ts` có `app.set('trust proxy', 1)` — bắt buộc giữ khi deploy sau proxy (Vercel/Render/Nginx) để rate limiter thấy IP thật.
+- **CORS (đã vá 2026-08-26)**: same-origin luôn được phép (so khớp Origin host với `x-forwarded-host`/`host`) + allowlist `CORS_ORIGINS`. **Cấm** blanket-allow theo platform (`*.vercel.app`, `Boolean(process.env.VERCEL)` → allow-all) — commit 3b57c4d từng mở hole này, đã thay bằng `corsDelegate` same-origin.
+- **Đã biết chưa fix (chấp nhận được pre-launch, nên làm trước khi có user thật)**: refresh token lưu PLAIN trong DB (nên hash SHA-256); refresh chưa rotate token (GEMINI.md ghi "xoay vòng" là sai lệch so với code); refresh endpoint chưa rate-limit; expired refresh tokens không được dọn khỏi DB.
 - Pre-commit hook quét secret đang hoạt động (đã có rule ở mục Git hooks bên dưới).
 
 ## UI direction: Phenomenon-clean (áp dụng từ 2026-08-26)

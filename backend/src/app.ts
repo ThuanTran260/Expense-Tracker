@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptionsDelegate } from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
@@ -38,28 +38,43 @@ const envOrigins = (process.env.CORS_ORIGINS || '')
 
 const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Cho phép requests không có origin (Postman, cURL, Same-origin v.v.)
-      if (!origin) {
-        return callback(null, true);
-      }
-      const normalized = origin.replace(/\/$/, '');
-      if (
-        allowedOrigins.includes(normalized) ||
-        normalized.startsWith('http://localhost:') ||
-        normalized.startsWith('http://127.0.0.1:') ||
-        normalized.endsWith('.vercel.app') ||
-        Boolean(process.env.VERCEL)
-      ) {
-        return callback(null, true);
-      }
-      return callback(new Error(`CORS blocked: ${origin}`));
-    },
-    credentials: true, // Cho phép cookies (refreshToken HttpOnly)
-  })
-);
+// CORS: same-origin LUÔN được phép (production + preview Vercel đều cùng domain qua
+// rewrite) + allowlist tùy chọn qua CORS_ORIGINS. Cấm mở theo platform/env blanket
+// (vd: mọi *.vercel.app hay mọi origin khi chạy trên Vercel) — đã từng là lỗ hổng.
+const corsDelegate: CorsOptionsDelegate = (req, callback) => {
+  const origin = req.headers.origin;
+
+  // Không có Origin header: curl/Postman/same-origin GET → cho phép
+  if (!origin) {
+    return callback(null, { origin: true, credentials: true });
+  }
+
+  const normalized = origin.replace(/\/$/, '');
+  let originHost = '';
+  try {
+    originHost = new URL(normalized).host;
+  } catch {
+    /* origin malformed */
+  }
+  const requestHost =
+    (req.headers['x-forwarded-host'] as string | undefined) ||
+    (req.headers.host as string | undefined) ||
+    '';
+
+  const allowed =
+    allowedOrigins.includes(normalized) ||
+    (originHost !== '' && originHost === requestHost) ||
+    normalized.startsWith('http://localhost:') ||
+    normalized.startsWith('http://127.0.0.1:');
+
+  if (allowed) {
+    return callback(null, { origin: true, credentials: true });
+  }
+  // Từ chối: không trả Access-Control-Allow-Origin → trình duyệt tự chặn
+  return callback(null, { origin: false });
+};
+
+app.use(cors(corsDelegate));
 
 // ─────────────────────────────────────────────
 // BODY PARSERS
