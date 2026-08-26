@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
+import api, { setAccessToken } from '../lib/api';
 
 interface UserSettings {
   theme: 'LIGHT' | 'DARK';
@@ -29,6 +30,36 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// ─────────────────────────────────────────────
+// BOOTSTRAP SINGLETON — silent refresh khi app khởi động (sau F5)
+// Promise nằm ở module scope: React StrictMode double-mount effect 2 lần
+// vẫn chỉ chạy ĐÚNG 1 request refresh (nếu tạo promise trong effect, 2 request
+// song song mang cùng cookie → reuse detection sẽ thu hồi cả phiên).
+// ─────────────────────────────────────────────
+let bootstrapPromise: Promise<User | null> | null = null;
+
+function bootstrapSession(): Promise<User | null> {
+  if (!bootstrapPromise) {
+    bootstrapPromise = (async () => {
+      try {
+        const { data } = await axios.post(
+          '/api/v1/auth/refresh',
+          {},
+          { withCredentials: true }
+        );
+        setAccessToken(data.accessToken);
+        const me = await api.get('/auth/me');
+        return me.data.user as User;
+      } catch {
+        // Không có cookie / refresh hết hạn → guest, im lặng (không toast lỗi)
+        setAccessToken(null);
+        return null;
+      }
+    })();
+  }
+  return bootstrapPromise;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,35 +73,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.settings?.theme]);
 
-  // Kiểm tra session khi app khởi động
+  // Kiểm tra phiên khi app khởi động (singleton — an toàn với StrictMode)
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const { data } = await api.get('/auth/me');
-        setUser(data.user);
-      } catch {
-        localStorage.removeItem('accessToken');
-      } finally {
+    let cancelled = false;
+    bootstrapSession().then((restoredUser) => {
+      if (!cancelled) {
+        setUser(restoredUser);
         setIsLoading(false);
       }
+    });
+    return () => {
+      cancelled = true;
     };
-    checkAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('accessToken', data.accessToken);
+    setAccessToken(data.accessToken);
     setUser(data.user);
   };
 
   const register = async (name: string, email: string, password: string) => {
     const { data } = await api.post('/auth/register', { name, email, password });
-    localStorage.setItem('accessToken', data.accessToken);
+    setAccessToken(data.accessToken);
     setUser(data.user);
   };
 
@@ -78,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.post('/auth/logout');
     } finally {
-      localStorage.removeItem('accessToken');
+      setAccessToken(null);
       localStorage.removeItem('expense_tracker_theme');
       document.documentElement.removeAttribute('data-theme');
       setUser(null);
