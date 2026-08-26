@@ -1,10 +1,30 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/errors';
 import { AuthPayload } from '../middlewares/auth';
 
 const BCRYPT_ROUNDS = 12;
+
+/**
+ * Refresh token lưu DB ở dạng hash SHA-256 (không plain) — nếu DB bị lộ,
+ * attacker không có token usable để dùng ngay.
+ */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/** Dọn token hết hạn — best-effort, không được làm hỏng auth flow */
+async function purgeExpiredTokens(): Promise<void> {
+  try {
+    await prisma.refreshToken.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    });
+  } catch {
+    // bỏ qua — dọn dẹp thất bại không chặn đăng nhập/refresh
+  }
+}
 
 function getEnv(key: string): string {
   const val = process.env[key];
@@ -76,11 +96,13 @@ export const authService = {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // Lưu refresh token vào DB để hỗ trợ logout
+    // Lưu refresh token vào DB (hash) để hỗ trợ logout + reuse detection
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     await prisma.refreshToken.create({
-      data: { token: refreshToken, userId: user.id, expiresAt },
+      data: { token: hashToken(refreshToken), userId: user.id, expiresAt },
     });
+
+    void purgeExpiredTokens();
 
     return { user, accessToken, refreshToken };
   },
@@ -114,11 +136,13 @@ export const authService = {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // Lưu refresh token
+    // Lưu refresh token (hash)
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await prisma.refreshToken.create({
-      data: { token: refreshToken, userId: user.id, expiresAt },
+      data: { token: hashToken(refreshToken), userId: user.id, expiresAt },
     });
+
+    void purgeExpiredTokens();
 
     // Không trả passwordHash trong response
     const { passwordHash: _, ...safeUser } = user;
@@ -126,11 +150,18 @@ export const authService = {
   },
 
   /**
-   * Refresh: đổi refreshToken (từ cookie) lấy accessToken mới.
+   * Refresh: đổi refreshToken (từ cookie) lấy accessToken mới + ROTATE refresh token.
+   * - Token cũ bị xóa khỏi DB ngay (one-time use) → token bị đánh cắp chỉ dùng được 1 lần.
+   * - Lưu ý edge case: 2 tab refresh cùng lúc → tab thua race nhận 401 và phải login lại
+   *   (hiếm, tự hồi phục; frontend đã có hàng đợi refresh trong cùng 1 tab).
    */
   async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw AppError.unauthorized('Refresh token không hợp lệ hoặc đã hết hạn');
+    }
+
     const stored = await prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
+      where: { token: hashToken(refreshToken) },
     });
 
     if (!stored || stored.expiresAt < new Date()) {
@@ -145,15 +176,31 @@ export const authService = {
     }
 
     const accessToken = generateAccessToken(payload);
-    return { accessToken };
+    const newRefreshToken = generateRefreshToken(payload);
+
+    // ROTATION: vô hiệu token cũ, cấp token mới (lưu hash)
+    await prisma.$transaction([
+      prisma.refreshToken.delete({ where: { token: stored.token } }),
+      prisma.refreshToken.create({
+        data: {
+          token: hashToken(newRefreshToken),
+          userId: stored.userId,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      }),
+    ]);
+
+    void purgeExpiredTokens();
+
+    return { accessToken, refreshToken: newRefreshToken };
   },
 
   /**
-   * Logout — xóa refreshToken khỏi DB (revoke).
+   * Logout — xóa refreshToken khỏi DB (revoke, so khớp theo hash).
    */
   async logout(refreshToken: string | undefined) {
     if (refreshToken) {
-      await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+      await prisma.refreshToken.deleteMany({ where: { token: hashToken(refreshToken) } });
     }
   },
 

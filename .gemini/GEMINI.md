@@ -37,7 +37,7 @@
 ## 🛡️ 4. BẢO MẬT & QUẢN LÝ DỮ LIỆU
 1. **Quản lý Token Đa lớp (JWT Tokens)**:
    - **Access Token (15 phút)**: Trả về JSON, lưu trong Header `Authorization: Bearer <token>`.
-   - **Refresh Token (7 ngày)**: Lưu trong `HttpOnly Cookie` (có cờ `SameSite: strict`, `Secure` trên production), tự động xoay vòng và lưu DB để hỗ trợ thu hồi quyền khi logout.
+   - **Refresh Token (7 ngày)**: Lưu trong `HttpOnly Cookie` (có cờ `SameSite: strict`, `Secure` trên production), **tự động xoay vòng mỗi lần refresh** (token cũ bị vô hiệu ngay — one-time use) và lưu DB **dạng hash SHA-256** (không plain) để hỗ trợ thu hồi quyền khi logout; token hết hạn được dọn định kỳ.
 2. **Zero Hardcoded Secrets**:
    - Mọi biến nhạy cảm (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`) phải đọc qua `process.env`.
    - File `.env` thật luôn được `.gitignore` bảo vệ và kiểm tra qua pre-commit hook.

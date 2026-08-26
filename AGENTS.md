@@ -54,7 +54,8 @@ Root `package.json` đã có `dev` / `dev:api` / `dev:web` / `db:push` / `db:see
 - Prisma `binaryTargets = ["native", "rhel-openssl-3.0.x"]` cho runtime Amazon Linux của Vercel; nếu deploy báo thiếu engine thì đổi sang `rhel-openssl-1.0.x`.
 - `backend/src/app.ts` có `app.set('trust proxy', 1)` — bắt buộc giữ khi deploy sau proxy (Vercel/Render/Nginx) để rate limiter thấy IP thật.
 - **CORS (đã vá 2026-08-26)**: same-origin luôn được phép (so khớp Origin host với `x-forwarded-host`/`host`) + allowlist `CORS_ORIGINS`. **Cấm** blanket-allow theo platform (`*.vercel.app`, `Boolean(process.env.VERCEL)` → allow-all) — commit 3b57c4d từng mở hole này, đã thay bằng `corsDelegate` same-origin.
-- **Đã biết chưa fix (chấp nhận được pre-launch, nên làm trước khi có user thật)**: refresh token lưu PLAIN trong DB (nên hash SHA-256); refresh chưa rotate token (GEMINI.md ghi "xoay vòng" là sai lệch so với code); refresh endpoint chưa rate-limit; expired refresh tokens không được dọn khỏi DB.
+- **Đã biết chưa fix (chấp nhận được pre-launch)**: access token nằm trong `localStorage` — lỗ hổng XSS tương lai sẽ lấy được token 15 phút; giữ deps sạch, tránh `dangerouslySetInnerHTML`.
+- **Refresh flow (đã harden 2026-08-26)**: token lưu DB dạng hash SHA-256; rotate mỗi lần refresh (token cũ bị xóa ngay — one-time use; 2 tab refresh cùng lúc → tab thua nhận 401, hiếm và tự hồi phục); expired tokens được purge kèm login/refresh; `/auth/refresh` có rate-limit riêng 30/phút.
 - Pre-commit hook quét secret đang hoạt động (đã có rule ở mục Git hooks bên dưới).
 
 ## UI direction: Phenomenon-clean (áp dụng từ 2026-08-26)

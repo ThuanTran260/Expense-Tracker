@@ -19,9 +19,23 @@ const authLimiter = rateLimit({
   },
 });
 
+// Nới hơn authLimiter vì refresh diễn ra định kỳ theo phiên (multi-tab)
+const refreshLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Quá nhiều yêu cầu refresh. Vui lòng thử lại sau 1 phút.',
+    },
+  },
+});
+
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
-router.post('/refresh', authController.refresh);
+router.post('/refresh', refreshLimiter, authController.refresh);
 router.post('/logout', authenticate, authController.logout);
 router.get('/me', authenticate, authController.me);
 

@@ -46,7 +46,9 @@ export const authController = {
   async refresh(req: Request, res: Response, next: NextFunction) {
     try {
       const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
-      const { accessToken } = await authService.refresh(refreshToken);
+      const { accessToken, refreshToken: newRefreshToken } = await authService.refresh(refreshToken);
+      // Rotation: cấp cookie mới thay thế cookie cũ (HttpOnly)
+      res.cookie(REFRESH_COOKIE_NAME, newRefreshToken, REFRESH_COOKIE_OPTIONS);
       res.json({ accessToken });
     } catch (err) {
       next(err);
