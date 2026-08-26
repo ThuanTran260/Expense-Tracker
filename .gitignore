@@ -65,3 +65,6 @@ secret*
 # Plan nội bộ (không commit)
 implementation_plan.md
 test_plan.md
+
+# Load test credentials (local only)
+load/users.json
