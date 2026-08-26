@@ -9,6 +9,7 @@ import categoryRoutes from './routes/category.routes';
 import transactionRoutes from './routes/transaction.routes';
 import statsRoutes from './routes/stats.routes';
 import budgetRoutes from './routes/budget.routes';
+import exchangeRoutes from './routes/exchange.routes';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -101,6 +102,7 @@ app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/transactions`, transactionRoutes);
 app.use(`${API_PREFIX}/stats`, statsRoutes);
 app.use(`${API_PREFIX}/budgets`, budgetRoutes);
+app.use(`${API_PREFIX}/exchange-rates`, exchangeRoutes);
 
 // ─────────────────────────────────────────────
 // ERROR HANDLERS — PHẢI ĐẶT CUỐI CÙNG

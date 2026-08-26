@@ -57,6 +57,7 @@ Root `package.json` đã có `dev` / `dev:api` / `dev:web` / `db:push` / `db:see
 - **Đã biết chưa fix (chấp nhận được pre-launch)**: access token nằm trong `localStorage` — lỗ hổng XSS tương lai sẽ lấy được token 15 phút; giữ deps sạch, tránh `dangerouslySetInnerHTML`.
 - **Refresh flow (đã harden 2026-08-26)**: refresh token **opaque** (random 48B, không phải JWT) lưu DB dạng hash SHA-256; rotate mỗi lần refresh + **reuse detection** (dùng lại token đã rotate → thu hồi toàn bộ `familyId`); expired/rotated>24h được purge; `/auth/refresh` rate-limit riêng 30/phút. Frontend: access token chỉ nằm **trong memory** (không localStorage), refresh được serialize cross-tab bằng Web Locks (`frontend/src/lib/api.ts`).
 - **Security test suite** (`backend/tests/security/`): IDOR matrix, auth-flow abuse, input fuzz, headers/exposure — chạy cùng `pnpm --filter expense-tracker-backend test`; mọi PR phá invariant bảo mật sẽ đỏ CI.
+- **CSP + security headers (2026-08-26)**: khai báo trong `vercel.json` (KHÔNG phải helmet — HTML do Vercel CDN serve, không đi qua Express). `connect-src 'self'`: client cấm gọi API ngoài trực tiếp — tỷ giá lấy qua backend `/api/v1/exchange-rates` (cache 1h + fallback offline). Theme init script phải external (`public/theme-init.js`) vì `script-src 'self'` chặn inline; thêm script inline mới = thêm hash hoặc tách file. Sau khi đổi CSP phải QA console trên preview URL trước khi merge.
 - Pre-commit hook quét secret đang hoạt động (đã có rule ở mục Git hooks bên dưới).
 
 ## UI direction: Phenomenon-clean (áp dụng từ 2026-08-26)

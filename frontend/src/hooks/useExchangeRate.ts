@@ -1,22 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
+import api from '../lib/api';
 
 interface ExchangeRateResponse {
   result: string;
   provider: string;
   time_last_update_utc: string;
-  time_next_update_utc: string;
+  time_next_update_utc?: string;
   rates: Record<string, number>;
 }
 
 export function useExchangeRate() {
   const { data, isLoading, isError, refetch, dataUpdatedAt } = useQuery<ExchangeRateResponse>({
     queryKey: ['exchange-rates', 'USD'],
+    // Gọi qua backend (/api/v1/exchange-rates) — server cache 1h + fallback offline;
+    // client không gọi API ngoài trực tiếp → CSP giữ connect-src 'self'
     queryFn: async () => {
-      const res = await fetch('https://open.er-api.com/v6/latest/USD');
-      if (!res.ok) {
-        throw new Error('Failed to fetch exchange rates');
-      }
-      return res.json();
+      const res = await api.get('/exchange-rates');
+      return res.data as ExchangeRateResponse;
     },
     staleTime: 1000 * 60 * 60, // 1 hour cache
     refetchOnWindowFocus: false,
