@@ -55,7 +55,8 @@ Root `package.json` đã có `dev` / `dev:api` / `dev:web` / `db:push` / `db:see
 - `backend/src/app.ts` có `app.set('trust proxy', 1)` — bắt buộc giữ khi deploy sau proxy (Vercel/Render/Nginx) để rate limiter thấy IP thật.
 - **CORS (đã vá 2026-08-26)**: same-origin luôn được phép (so khớp Origin host với `x-forwarded-host`/`host`) + allowlist `CORS_ORIGINS`. **Cấm** blanket-allow theo platform (`*.vercel.app`, `Boolean(process.env.VERCEL)` → allow-all) — commit 3b57c4d từng mở hole này, đã thay bằng `corsDelegate` same-origin.
 - **Đã biết chưa fix (chấp nhận được pre-launch)**: access token nằm trong `localStorage` — lỗ hổng XSS tương lai sẽ lấy được token 15 phút; giữ deps sạch, tránh `dangerouslySetInnerHTML`.
-- **Refresh flow (đã harden 2026-08-26)**: token lưu DB dạng hash SHA-256; rotate mỗi lần refresh (token cũ bị xóa ngay — one-time use; 2 tab refresh cùng lúc → tab thua nhận 401, hiếm và tự hồi phục); expired tokens được purge kèm login/refresh; `/auth/refresh` có rate-limit riêng 30/phút.
+- **Refresh flow (đã harden 2026-08-26)**: refresh token **opaque** (random 48B, không phải JWT) lưu DB dạng hash SHA-256; rotate mỗi lần refresh + **reuse detection** (dùng lại token đã rotate → thu hồi toàn bộ `familyId`); expired/rotated>24h được purge; `/auth/refresh` rate-limit riêng 30/phút. Frontend: access token chỉ nằm **trong memory** (không localStorage), refresh được serialize cross-tab bằng Web Locks (`frontend/src/lib/api.ts`).
+- **Security test suite** (`backend/tests/security/`): IDOR matrix, auth-flow abuse, input fuzz, headers/exposure — chạy cùng `pnpm --filter expense-tracker-backend test`; mọi PR phá invariant bảo mật sẽ đỏ CI.
 - Pre-commit hook quét secret đang hoạt động (đã có rule ở mục Git hooks bên dưới).
 
 ## UI direction: Phenomenon-clean (áp dụng từ 2026-08-26)

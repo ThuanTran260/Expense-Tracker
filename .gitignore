@@ -61,3 +61,7 @@ secret*
 .agents/*
 !.agents/AGENTS.md
 !.agents/skills/
+
+# Plan nội bộ (không commit)
+implementation_plan.md
+test_plan.md

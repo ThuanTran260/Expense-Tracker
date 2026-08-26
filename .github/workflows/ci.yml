@@ -54,9 +54,14 @@ jobs:
         working-directory: backend
         run: pnpm exec prisma generate
 
-      - name: Run DB migrations
+      # Repo dùng db push workflow (không có thư mục migrations) —
+      # migrate deploy là no-op và test DB sẽ thiếu schema mới
+      - name: Push DB schema (test database)
         working-directory: backend
-        run: pnpm exec prisma migrate deploy
+        run: pnpm exec prisma db push --skip-generate
+
+      - name: Dependency audit (fail on high CVEs)
+        run: pnpm audit --audit-level=high --prod
 
       - name: Type check
         run: pnpm --filter expense-tracker-backend type-check

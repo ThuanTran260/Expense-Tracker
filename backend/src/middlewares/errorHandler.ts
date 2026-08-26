@@ -37,6 +37,17 @@ export function errorHandler(
     return;
   }
 
+  // 2b. body-parser: payload vượt giới hạn → 413 (không rơi vào 500)
+  if ((err as any)?.type === 'entity.too.large' || (err as any)?.statusCode === 413) {
+    res.status(413).json({
+      error: {
+        code: ErrorCode.PAYLOAD_TOO_LARGE,
+        message: 'Payload quá lớn',
+      },
+    });
+    return;
+  }
+
   // 3. Unknown / unhandled error
   logger.error('Unhandled error', {
     message: err.message,
